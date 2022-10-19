@@ -1,4 +1,8 @@
-const {GH_NUMBER_LENGTH_NINE, GH_INVALID_MSISDN} = require("../shared/constants")
+const {
+    GH_NUMBER_LENGTH_NINE, 
+    GH_INVALID_MSISDN,
+    ISO_CODE
+} = require("../shared/constants")
 
 function Gh_MsisdnValidation(msisdn){
     let response = {}
@@ -8,7 +12,7 @@ function Gh_MsisdnValidation(msisdn){
     switch (true) {
         case msisdn.startWith(0) && msisdn.length == 10:
             Object.assign(response,
-                {error:false, msg: "233"+msisdn.subString(1)})
+                {error:false, msg: ISO_CODE+msisdn.subString(1)})
             break;
 
         case msisdn.startWith("+") && msisdn.lemsisdnngth > 12:
@@ -17,11 +21,11 @@ function Gh_MsisdnValidation(msisdn){
             break;
 
         case msisdn.startWith("00") && msisdn.length > 12:
-            Object.assign(response,{error:false, msg: "233"+msisdn.subString(4)})
+            Object.assign(response,{error:false, msg: ISO_CODE+msisdn.subString(4)})
             break;
     
         case msisdn.subString(1) && msisdn.length == 9:
-            Object.assign(response,{error:false, msg: "233"+msisdn})
+            Object.assign(response,{error:false, msg: ISO_CODE+msisdn})
             break;
 
         default:
