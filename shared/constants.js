@@ -6,6 +6,7 @@ const BASE_URL = "/api/v1"
 
 // messages
 const GH_NUMBER_LENGTH_NINE = "Phone number cannot be less than 9 digits"
+const GH_INVALID_MSISDN = "You have entered an invalid phone number, Please try again"
 
 module.exports = {
     CODE_FAILURE,
