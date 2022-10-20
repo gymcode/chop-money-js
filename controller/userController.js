@@ -2,10 +2,14 @@ const {CountryMsisdnValidation} = require("../utils/msisdnValidation")
 const {wrapFailureResponse, wrapSuccessResponse} = require("../shared/response")
 const GenerateOTP = require("../utils/generateOtp")
 const client = require("../config/redis")
+const bcrypt = require("bcryptjs")
 // user model
 const User = require("../models/User")
 
-// register a new user 
+
+/*
+register a new user 
+*/
 exports.userRegistration = async (req, res)=>{
     // validating the msisdn based on the country code
     const request = req.body
@@ -31,22 +35,25 @@ exports.userRegistration = async (req, res)=>{
     user = await userInput.save()
 
     if (user == null) 
-        return wrapFailureResponse(res, 404, "Could not insert in the database", null)
+        return wrapFailureResponse(res, 500, "Could not insert in the database", null)
     
     
-    // generate code and send 
+    // generate code  hash code 
     const code = GenerateOTP()
-    console.log(code)
+    const codeHash = bcrypt.hashSync(`${code}`, bcrypt.genSaltSync(10))
+    const storageKey = `${user._id}_OTP`
 
-    await client.set("hello", "this is")
-    const value = await client.get("hello")
-    // send sms 
+    await client.set(storageKey, codeHash)
     
-    console.log(value)
+    // TODO(send SMS to user with the otp)
+    
     wrapSuccessResponse(res, 200, user)
 }
 
-// it should confirm otp
+
+/*
+it should confirm otp
+*/ 
 exports.confirmOTP = (req, res) =>{
     res.send("confirming otp")
 }
