@@ -10,21 +10,21 @@ function Gh_MsisdnValidation(msisdn){
         return {error: true, msg: GH_NUMBER_LENGTH_NINE}
 
     switch (true) {
-        case msisdn.startWith(0) && msisdn.length == 10:
+        case msisdn.startsWith(0) && msisdn.length == 10:
             Object.assign(response,
-                {error:false, msg: ISO_CODE+msisdn.subString(1)})
+                {error:false, msg: ISO_CODE+msisdn.substring(1)})
             break;
 
-        case msisdn.startWith("+") && msisdn.lemsisdnngth > 12:
+        case msisdn.startsWith("+") && msisdn.length > 12:
             Object.assign(response,
-                {error:false, msg: msisdn.subString(1)})
+                {error:false, msg: msisdn.substring(1)})
             break;
 
-        case msisdn.startWith("00") && msisdn.length > 12:
-            Object.assign(response,{error:false, msg: ISO_CODE+msisdn.subString(4)})
+        case msisdn.startsWith("00") && msisdn.length > 12:
+            Object.assign(response,{error:false, msg: ISO_CODE+msisdn.substring(4)})
             break;
     
-        case msisdn.subString(1) && msisdn.length == 9:
+        case msisdn.substring(1) && msisdn.length == 9:
             Object.assign(response,{error:false, msg: ISO_CODE+msisdn})
             break;
 
@@ -36,14 +36,16 @@ function Gh_MsisdnValidation(msisdn){
 }
 
 function CountryMsisdnValidation(msisdn, countryCode = "GH"){
+    let response;
     switch (countryCode) {
         case "GH":
-            Gh_MsisdnValidation(msisdn)
+            response = Gh_MsisdnValidation(msisdn)
             break;
     
         default:
             break;
     }
+    return response
 }
 
-module.exports = CountryMsisdnValidation
+module.exports = {CountryMsisdnValidation}

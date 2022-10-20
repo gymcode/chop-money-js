@@ -1,7 +1,30 @@
+const {CountryMsisdnValidation} = require("../utils/msisdnValidation")
+const {CODE_FAILURE} = require("../shared/constants")
 
 // register a new user 
 exports.userRegistration = (req, res)=>{
-    res.send('Hello World!')
+    // validating the msisdn based on the country code
+    const request = req.body
+    const {error, msg} = CountryMsisdnValidation(request.msisdn, request.countryCode)
+    if(error){
+        res.status(422).json({
+            code: CODE_FAILURE,
+            msg: "failue",
+            data: null,
+            error: {
+                error: true,
+                errMsg: msg, 
+                detailedError: null
+            }
+        })
+    }
+
+    // checking in the database if the user already exists
+    
+
+
+    res.send(phoneNumber)
+    
 }
 
 // it should confirm otp

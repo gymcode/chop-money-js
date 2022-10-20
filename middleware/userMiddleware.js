@@ -10,9 +10,13 @@ function userValidationMiddleware (schema){
             if (error == undefined) return next()
             res.status(422).json({
                 code: CODE_FAILURE,
-                msg: error.details[0].message,
+                msg: "failure",
                 data: null,
-                error: error
+                error: {
+                    error: true,
+                    errMsg: error.details[0].message, 
+                    detailedError: error
+                }
             })
         } catch (error) {
             console.error(error)
