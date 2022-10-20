@@ -1,6 +1,7 @@
 const {CountryMsisdnValidation} = require("../utils/msisdnValidation")
 const {wrapFailureResponse, wrapSuccessResponse} = require("../shared/response")
 const GenerateOTP = require("../utils/generateOtp")
+const client = require("../config/redis")
 // user model
 const User = require("../models/User")
 
@@ -36,9 +37,12 @@ exports.userRegistration = async (req, res)=>{
     // generate code and send 
     const code = GenerateOTP()
     console.log(code)
+
+    await client.set("hello", "this is")
+    const value = await client.get("hello")
     // send sms 
     
-    console.log(user)
+    console.log(value)
     wrapSuccessResponse(res, 200, user)
 }
 
