@@ -12,7 +12,6 @@ const app = express()
 const userRoutes = require("./routes/userRoute")
 
 
-
 app.use(`${BASE_URL}/user`, userRoutes)
 
 app.listen(port, (uri) => {
