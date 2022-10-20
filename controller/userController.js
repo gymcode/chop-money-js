@@ -1,5 +1,6 @@
 const {CountryMsisdnValidation} = require("../utils/msisdnValidation")
-const {wrapFailureResponse} = require("../shared/response")
+const {wrapFailureResponse, wrapSuccessResponse} = require("../shared/response")
+const GenerateOTP = require("../utils/generateOtp")
 // user model
 const User = require("../models/User")
 
@@ -14,25 +15,31 @@ exports.userRegistration = async (req, res)=>{
     const msisdn = msg
 
     // checking in the database if the user already exists
-    const user = await User.findOne({msisdn: msisdn}).exec()
-    if (user != null) {
-        wrapFailureResponse(res, 404, "User already exists", null)
-    }
+    let user = await User.findOne({msisdn: msisdn}).exec()
+    if (user != null) 
+       return wrapFailureResponse(res, 404, "User already exists", null)
+    
 
-    // add user and send sms 
+    // add user
     const userInput = new User({
         username: request.username,
         msisdn: msisdn,
         countryCode: request.countryCode,
         isoCode: request.isoCode,
     })
-    userInput.save()
+    user = await userInput.save()
 
-    console.log(user)
-
-
-    res.send("phoneNumber")
+    if (user == null) 
+        return wrapFailureResponse(res, 404, "Could not insert in the database", null)
     
+    
+    // generate code and send 
+    const code = GenerateOTP()
+    console.log(code)
+    // send sms 
+    
+    console.log(user)
+    wrapSuccessResponse(res, 200, user)
 }
 
 // it should confirm otp

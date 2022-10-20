@@ -1,5 +1,4 @@
-const Joi = require("joi")
-const {CODE_FAILURE} =  require("../shared/constants")
+const {wrapFailureResponse} = require("../shared/response")
 
 function userValidationMiddleware (schema){
     return (req,res, next)=>{
@@ -7,16 +6,7 @@ function userValidationMiddleware (schema){
             const {error} =  schema.validate(req.body)
 
             if (error == undefined) return next()
-            res.status(422).json({
-                code: CODE_FAILURE,
-                msg: "failure",
-                data: null,
-                error: {
-                    error: true,
-                    errMsg: error.details[0].message, 
-                    detailedError: error
-                }
-            })
+            wrapFailureResponse(res, 422,error.details[0].message, error)
         } catch (error) {
             console.error(error)
         }
