@@ -4,6 +4,7 @@ const GenerateOTP = require("../utils/generateOtp")
 const client = require("../config/redis")
 const bcrypt = require("bcryptjs")
 const { getMinutes } = require("../utils/getMinutes")
+const jwt = require('jsonwebtoken')
 
 // user model
 const User = require("../models/User")
@@ -184,13 +185,31 @@ exports.setPin = async (req, res) => {
             upsert: true,
             rawResult: true // Return the raw result from the MongoDB driver
         })
-    
-    if (!resp.isPinSet)
+
+    if (!resp.value.isPinSet)
         return wrapFailureResponse(res, 200, "Could not update OTP confirmation status", null)
 
     // TODO generate and store token
+    // expires in one day
+    const accessToken = jwt.sign(
+        {_id: resp.value._id}, 
+        process.env.ACCESS_TOKEN_SECRET,
+        {expiresIn: "1d"}
+    )
+
+    // expires only when the user logs out
+    const refreshToken = jwt.sign(
+        {_id: resp.value._id}, 
+        process.env.REFRESH_TOKEN_SECRET
+    )
+
+    // store refresh token in local storage
+    const storageKey = `${user._id}_REFRESH_TOKEN`
+    await client.set(storageKey, refreshToken)
+
+    const newObj = {...resp.value, token: accessToken}
     
-    wrapSuccessResponse(res, 200, resp.value, null)
+    wrapSuccessResponse(res, 200, newObj, null)
 
 }
 
