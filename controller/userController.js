@@ -99,6 +99,11 @@ exports.confirmOTP = async (req, res) =>{
     wrapSuccessResponse(res, 200, resp, null)
 }
 
+
+exports.setPin = (req, res) =>{
+    res.send("final count down")
+}
+
 // it should resend otp
 exports.resendOTP = (req, res)=>{
     res.send("final count down")

@@ -16,6 +16,8 @@ router.put("/confirm-otp", userController.confirmOTP)
 
 router.get("/resend", userController.resendOTP)
 
+router.put("/set-pin", userController.setPin)
+
 router.post('/login', userController.userLogin)
 
 router.put("/:userID", userController.updateUserDetails)
