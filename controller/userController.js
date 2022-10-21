@@ -237,9 +237,11 @@ exports.userLogin = async (req, res) => {
 
     const pinConfirmationStatus = bcrypt.compareSync(request.pin, user.password)
     if (!pinConfirmationStatus) {
+        // check if account is deactivate
+        // increase count of invalid login attempts
         
     }else{
-        
+        // success 
     }
 }
 

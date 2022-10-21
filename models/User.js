@@ -12,6 +12,7 @@ const userSchema = new Schema({
     invalidLoginAttempts: {type: Number, default: 0},
     lockCoeff: {type: Number, default: 0},
     lockPeriod: {type: Date, default: new Date()},
+    userLockStatus: {type: Boolean, default: false},
     activated: {type: Boolean, default:false},
     isOtpConfirmed: {type: Boolean, default:false},
     isPinSet: {type: Boolean, default:false},
