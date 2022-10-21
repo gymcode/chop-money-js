@@ -1,9 +1,9 @@
-const {CountryMsisdnValidation} = require("../utils/msisdnValidation")
-const {wrapFailureResponse, wrapSuccessResponse} = require("../shared/response")
+const { CountryMsisdnValidation } = require("../utils/msisdnValidation")
+const { wrapFailureResponse, wrapSuccessResponse } = require("../shared/response")
 const GenerateOTP = require("../utils/generateOtp")
 const client = require("../config/redis")
 const bcrypt = require("bcryptjs")
-const {getMinutes} = require("../utils/getMinutes")
+const { getMinutes } = require("../utils/getMinutes")
 // user model
 const User = require("../models/User")
 
@@ -11,20 +11,20 @@ const User = require("../models/User")
 /*
 register a new user 
 */
-exports.userRegistration = async (req, res)=>{
+exports.userRegistration = async (req, res) => {
     // validating the msisdn based on the country code
     const request = req.body
-    const {error, msg} = CountryMsisdnValidation(request.msisdn, request.countryCode)
-    if(error){
+    const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
+    if (error) {
         wrapFailureResponse(res, 422, msg, null)
     }
     const msisdn = msg
 
     // checking in the database if the user already exists
-    let user = await User.findOne({msisdn: msisdn}).exec()
-    if (user != null) 
-       return wrapFailureResponse(res, 404, "User already exists", null)
-    
+    let user = await User.findOne({ msisdn: msisdn }).exec()
+    if (user != null)
+        return wrapFailureResponse(res, 404, "User already exists", null)
+
 
     // add user
     const userInput = new User({
@@ -35,77 +35,88 @@ exports.userRegistration = async (req, res)=>{
     })
     user = await userInput.save()
 
-    if (user == null) 
+    if (user == null)
         return wrapFailureResponse(res, 500, "Could not insert in the database", null)
-    
-    
+
+
     // generate code  hash code 
     const code = GenerateOTP()
+    console.log(code)
     const codeHash = bcrypt.hashSync(`${code}`, bcrypt.genSaltSync(10))
     const storageKey = `${user._id}_OTP`
 
-    const expiryDate  = getMinutes(5)
+    const expiryDate = getMinutes(5)
     const otpStorageObject = {
         code: codeHash,
         expire_at: expiryDate
     }
 
     await client.set(storageKey, JSON.stringify(otpStorageObject))
-    
+
     // TODO(send SMS to user with the otp)
-    
+
     wrapSuccessResponse(res, 200, user)
 }
 
 
 /*
 it should confirm otp
-*/ 
-exports.confirmOTP = async (req, res) =>{
+*/
+exports.confirmOTP = async (req, res) => {
     // getting the request body 
     const request = req.body
-    const {error, msg} = CountryMsisdnValidation(request.msisdn, request.countryCode)
-    if(error){
+    const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
+    if (error) {
         wrapFailureResponse(res, 422, msg, null)
     }
 
     const msisdn = msg
     // getting the user details based on the msisdn
-    const user = User.findOne({msisdn: msisdn}).exec()
-    if (user == null) 
-       return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)    
+    const user = await User.findOne({ msisdn: msisdn }).exec()
+    if (user == null)
+        return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)
 
     // get the otp from the cached data
     const storageKey = `${user._id}_OTP`
     const value = await client.get(storageKey)
     const data = JSON.parse(value)
-    
+    if (data == null && user.isOtpConfirmed)
+        return wrapSuccessResponse(res, 200, "You have already confirmed the OTP", null)
+
+    if (data == null && !user.isOtpConfirmed)
+        return wrapFailureResponse(res, 500, "Please try signing up first", null)
+
     // checking for the expire by comparison
     const currentDateTime = new Date()
-    if (currentDateTime > data.expire_at)
-        return wrapFailureResponse(res, 500, "The OTP has expired please, resend OTP")
+    if (currentDateTime > new Date(data.expire_at))
+        return wrapFailureResponse(res, 500, "The OTP has expired, please resend OTP")
 
     // comparing the hashed OTP and the code
-    const otpCodeComparison = bcrypt.compareSync(request.code, data.codeHash)
-    if (otpCodeComparison)
-        return wrapFailureResponse(res, 500, "OTPs do not match, please try again") 
+    const otpCodeComparison = bcrypt.compareSync(request.code, data.code)
+    if (!otpCodeComparison)
+        return wrapFailureResponse(res, 500, "OTPs do not match, please try again")
 
     // deleting the cached data
     client.del(storageKey)
 
     // update otp confirm status for the user
-    const resp = await User.findOneAndUpdate({_id: user._id}, {isOtpCOnfirmed: true})
+    const resp = await User.findOneAndUpdate({ _id: user._id }, { isOtpConfirmed: true },
+        {
+            new: true,
+            upsert: true,
+            rawResult: true // Return the raw result from the MongoDB driver
+        })
 
-    wrapSuccessResponse(res, 200, resp, null)
+    wrapSuccessResponse(res, 200, resp.value, null)
 }
 
 
-exports.setPin = (req, res) =>{
+exports.setPin = (req, res) => {
     res.send("final count down")
 }
 
 // it should resend otp
-exports.resendOTP = (req, res)=>{
+exports.resendOTP = (req, res) => {
     res.send("final count down")
 }
 
@@ -120,13 +131,13 @@ exports.getUser = (req, res) => {
 }
 
 // it should update user details 
-exports.updateUserDetails = (req, res)=>{
+exports.updateUserDetails = (req, res) => {
     res.send("bambi and the rest")
 }
 
 // it should sign out user 
-exports.logOut = (req, res)=>{
+exports.logOut = (req, res) => {
     res.send("log me out please")
 }
 
- 
+
