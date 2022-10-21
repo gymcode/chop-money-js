@@ -102,12 +102,15 @@ exports.confirmOTP = async (req, res) => {
     client.del(storageKey)
 
     // update otp confirm status for the user
-    const resp = await User.findOneAndUpdate({ _id: user._id }, { isOtpConfirmed: true },
+    const resp = await User.findOneAndUpdate({ _id: user._id }, { isOtpConfirmed: true, update_at: new Date() },
         {
             new: true,
             upsert: true,
             rawResult: true // Return the raw result from the MongoDB driver
         })
+
+    if (!resp.isOtpConfirmed)
+        return wrapFailureResponse(res, 200, "Could not update OTP confirmation status", null)
 
     wrapSuccessResponse(res, 200, resp.value, null)
 }
@@ -150,8 +153,45 @@ exports.resendOTP = async (req, res) => {
 }
 
 
-exports.setPin = (req, res) => {
-    res.send("final set pin down")
+exports.setPin = async (req, res) => {
+    const request = req.body
+
+    const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
+    if (error) {
+        wrapFailureResponse(res, 422, msg, null)
+    }
+
+    const msisdn = msg
+    // getting the user details based on the msisdn
+    const user = await User.findOne({ msisdn: msisdn }).exec()
+    if (user == null)
+        return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)
+
+    // compare pins
+    if (request.pin != request.confirm_pin) 
+        return wrapFailureResponse(res, 500, "Pins do not match", null)
+
+    // hash pin and store in th database
+    const hashedPin = bcrypt.hashSync(request.pin, bcrypt.genSaltSync(10))
+
+    const resp = await User.findOneAndUpdate({ _id: user._id }, 
+        {   isPinSet: true, 
+            password: hashedPin,
+            activated: true,
+            update_at: new Date() },
+        {
+            new: true,
+            upsert: true,
+            rawResult: true // Return the raw result from the MongoDB driver
+        })
+    
+    if (!resp.isPinSet)
+        return wrapFailureResponse(res, 200, "Could not update OTP confirmation status", null)
+
+    // TODO generate and store token
+    
+    wrapSuccessResponse(res, 200, resp.value, null)
+
 }
 
 
