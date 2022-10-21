@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken')
 // user model
 const User = require("../models/User")
 const generateOtp = require("../utils/generateOtp")
+const _ = require('lodash')
 
 
 /*
@@ -110,7 +111,7 @@ exports.confirmOTP = async (req, res) => {
             rawResult: true // Return the raw result from the MongoDB driver
         })
 
-    if (!resp.isOtpConfirmed)
+    if (!resp.value.isOtpConfirmed)
         return wrapFailureResponse(res, 200, "Could not update OTP confirmation status", null)
 
     wrapSuccessResponse(res, 200, resp.value, null)
@@ -206,10 +207,9 @@ exports.setPin = async (req, res) => {
     // store refresh token in local storage
     const storageKey = `${user._id}_REFRESH_TOKEN`
     await client.set(storageKey, refreshToken)
-
-    const newObj = {...resp.value, token: accessToken}
+    const newObj = {...resp.value._doc, token: accessToken}
     
-    wrapSuccessResponse(res, 200, newObj, null)
+    wrapSuccessResponse(res, 200, _.omit(newObj, ['password']), null)
 
 }
 
