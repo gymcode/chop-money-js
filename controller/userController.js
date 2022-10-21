@@ -156,7 +156,7 @@ exports.resendOTP = async (req, res) => {
 
 
 /*
-it set pin
+it should set pin
 */ 
 exports.setPin = async (req, res) => {
     const request = req.body
@@ -218,8 +218,29 @@ exports.setPin = async (req, res) => {
 
 
 // it shoudld handle logging in a new user and storing auth token
-exports.userLogin = (req, res) => {
-    res.send('user login')
+exports.userLogin = async (req, res) => {
+    const request = req.body
+
+    const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
+    if (error) {
+        wrapFailureResponse(res, 422, msg, null)
+    }
+
+    const msisdn = msg
+    // getting the user details based on the msisdn
+    const user = await User.findOne({ msisdn: msisdn }).exec()
+    if (user == null)
+        return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)
+
+    if (new Date() < user.lockPeriod) 
+        return wrapFailureResponse(res, 500, "Sorry cannot try until the time elapses.")
+
+    const pinConfirmationStatus = bcrypt.compareSync(request.pin, user.password)
+    if (!pinConfirmationStatus) {
+        
+    }else{
+        
+    }
 }
 
 // it should handle getting a single user 
