@@ -4,8 +4,10 @@ const GenerateOTP = require("../utils/generateOtp")
 const client = require("../config/redis")
 const bcrypt = require("bcryptjs")
 const { getMinutes } = require("../utils/getMinutes")
+
 // user model
 const User = require("../models/User")
+const generateOtp = require("../utils/generateOtp")
 
 
 /*
@@ -111,14 +113,47 @@ exports.confirmOTP = async (req, res) => {
 }
 
 
-exports.setPin = (req, res) => {
-    res.send("final count down")
+/*
+it should resend otp
+*/ 
+exports.resendOTP = async (req, res) => {
+    const request = req.body
+    const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
+    if (error) {
+        wrapFailureResponse(res, 422, msg, null)
+    }
+
+    const msisdn = msg
+    // getting the user details based on the msisdn
+    const user = await User.findOne({ msisdn: msisdn }).exec()
+    if (user == null)
+        return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)
+    
+    // generating the otp
+    const code = generateOtp()
+    console.log(code)
+    const codeHash = bcrypt.hashSync(`${code}`, bcrypt.genSaltSync(10))
+
+    const storageKey = `${user._id}_OTP`
+
+    const expiryDate = getMinutes(5)
+    const otpStorageObject = {
+        code: codeHash,
+        expire_at: expiryDate
+    }
+
+    await client.set(storageKey, JSON.stringify(otpStorageObject))
+
+    // TODO(send SMS to user with the otp)
+    
+    wrapSuccessResponse(res, 200, user)
 }
 
-// it should resend otp
-exports.resendOTP = (req, res) => {
-    res.send("final count down")
+
+exports.setPin = (req, res) => {
+    res.send("final set pin down")
 }
+
 
 // it shoudld handle logging in a new user and storing auth token
 exports.userLogin = (req, res) => {
