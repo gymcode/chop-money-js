@@ -7,5 +7,6 @@ const RegistrationSchema = Joi.object({
     isoCode: Joi.string()   
 })
 
+
 module.exports = {RegistrationSchema}
 

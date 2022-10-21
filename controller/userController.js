@@ -51,9 +51,6 @@ exports.userRegistration = async (req, res)=>{
     }
 
     await client.set(storageKey, JSON.stringify(otpStorageObject))
-    const value = await client.get(storageKey)
-
-    console.log(value)
     
     // TODO(send SMS to user with the otp)
     
@@ -64,8 +61,42 @@ exports.userRegistration = async (req, res)=>{
 /*
 it should confirm otp
 */ 
-exports.confirmOTP = (req, res) =>{
-    res.send("confirming otp")
+exports.confirmOTP = async (req, res) =>{
+    // getting the request body 
+    const request = req.body
+    const {error, msg} = CountryMsisdnValidation(request.msisdn, request.countryCode)
+    if(error){
+        wrapFailureResponse(res, 422, msg, null)
+    }
+
+    const msisdn = msg
+    // getting the user details based on the msisdn
+    const user = User.findOne({msisdn: msisdn}).exec()
+    if (user == null) 
+       return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)    
+
+    // get the otp from the cached data
+    const storageKey = `${user._id}_OTP`
+    const value = await client.get(storageKey)
+    const data = JSON.parse(value)
+    
+    // checking for the expire by comparison
+    const currentDateTime = new Date()
+    if (currentDateTime > data.expire_at)
+        return wrapFailureResponse(res, 500, "The OTP has expired please, resend OTP")
+
+    // comparing the hashed OTP and the code
+    const otpCodeComparison = bcrypt.compareSync(request.code, data.codeHash)
+    if (otpCodeComparison)
+        return wrapFailureResponse(res, 500, "OTPs do not match, please try again") 
+
+    // deleting the cached data
+    client.del(storageKey)
+
+    // update otp confirm status for the user
+    const resp = await User.findOneAndUpdate({_id: user._id}, {isOtpCOnfirmed: true})
+
+    wrapSuccessResponse(res, 200, resp, null)
 }
 
 // it should resend otp
