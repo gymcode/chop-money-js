@@ -155,6 +155,9 @@ exports.resendOTP = async (req, res) => {
 }
 
 
+/*
+it set pin
+*/ 
 exports.setPin = async (req, res) => {
     const request = req.body
 
