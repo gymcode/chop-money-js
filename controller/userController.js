@@ -3,6 +3,7 @@ const {wrapFailureResponse, wrapSuccessResponse} = require("../shared/response")
 const GenerateOTP = require("../utils/generateOtp")
 const client = require("../config/redis")
 const bcrypt = require("bcryptjs")
+const {getMinutes} = require("../utils/getMinutes")
 // user model
 const User = require("../models/User")
 
@@ -43,7 +44,16 @@ exports.userRegistration = async (req, res)=>{
     const codeHash = bcrypt.hashSync(`${code}`, bcrypt.genSaltSync(10))
     const storageKey = `${user._id}_OTP`
 
-    await client.set(storageKey, codeHash)
+    const expiryDate  = getMinutes(5)
+    const otpStorageObject = {
+        code: codeHash,
+        expire_at: expiryDate
+    }
+
+    await client.set(storageKey, JSON.stringify(otpStorageObject))
+    const value = await client.get(storageKey)
+
+    console.log(value)
     
     // TODO(send SMS to user with the otp)
     

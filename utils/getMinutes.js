@@ -1,0 +1,9 @@
+function getMinutes(minutes){
+    const currentDate = new Date()
+    const newMinutes = currentDate.getMinutes() + minutes
+    currentDate.setMinutes(newMinutes)
+   
+    return currentDate
+}
+
+module.exports = {getMinutes}
