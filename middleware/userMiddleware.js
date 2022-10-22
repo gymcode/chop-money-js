@@ -1,4 +1,5 @@
 const {wrapFailureResponse} = require("../shared/response")
+const {verifySignedJwtWebToken} = require("../utils/jwt_helpers")
 
 function userValidationMiddleware (schema){
     return (req,res, next)=>{
@@ -13,6 +14,29 @@ function userValidationMiddleware (schema){
     }
 }
 
+function isUserAuthenticated(){
+    return (req, res, next) =>{
+        try {
+            // getting from the headers 
+            const authHeader = req.headers["authorization"]
+            console.log(authHeader)
+            if (authHeader == undefined) wrapFailureResponse(res, 400, "Authorization header not found", null)
+            console.log(authHeader.startsWith("Bearer"))
+
+            if (!authHeader.startsWith("Bearer")) wrapFailureResponse(res, 400, "Authorization header must start with "/Bearer/"", null)
+
+            const token = authHeader.substring(7)
+            const payload = verifySignedJwtWebToken(token)
+            console.log(payload)
+            return next()
+        } catch (error) {
+            console.error(error)
+            return wrapFailureResponse(res, 400, "Authorization header must start with "/Bearer/"", null)
+        }
+    }
+}
+
 module.exports = {
-    userValidationMiddleware
+    userValidationMiddleware,
+    isUserAuthenticated
 }

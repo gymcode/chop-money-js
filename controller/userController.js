@@ -221,7 +221,7 @@ exports.userLogin = async (req, res) => {
     const user = await User.findOne({ msisdn: msisdn }).exec()
     if (user == null)
         return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)
-
+    
     // if (new Date() < user.lockPeriod) 
     //     return wrapFailureResponse(res, 500, "Sorry cannot try until the time elapses.")
 

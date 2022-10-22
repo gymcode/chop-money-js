@@ -29,4 +29,4 @@ async function verifySignedJwtWebToken(token){
     }
 }
 
-module.exports = {signJwtWebToken}
+module.exports = {signJwtWebToken, verifySignedJwtWebToken}

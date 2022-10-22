@@ -5,7 +5,7 @@ const router = express.Router()
 const {RegistrationSchema} = require("../utils/joiValidation")
 
 // middlewares 
-const {userValidationMiddleware} = require("../middleware/userMiddleware")
+const {userValidationMiddleware, isUserAuthenticated} = require("../middleware/userMiddleware")
 
 const userController = require("../controller/userController")
 
@@ -22,7 +22,7 @@ router.post('/login', userController.userLogin)
 
 router.put("/:userID", userController.updateUserDetails)
 
-router.get("/:userID", userController.getUser)
+router.get("/:userID", isUserAuthenticated(), userController.getUser)
 
 router.get("/logout", userController.logOut)
 
