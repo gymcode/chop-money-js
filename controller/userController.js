@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken')
 const User = require("../models/User")
 const generateOtp = require("../utils/generateOtp")
 const _ = require('lodash')
+const {signJwtWebToken} = require("../utils/jwt_helpers")
 
 
 /*
@@ -195,24 +196,13 @@ exports.setPin = async (req, res) => {
 
     // TODO generate and store token
     // expires in one day
-    const accessToken = jwt.sign(
-        {_id: resp.value._id}, 
-        process.env.ACCESS_TOKEN_SECRET,
-        {expiresIn: "1d"}
-    )
-
-    // expires only when the user logs out
-    const refreshToken = jwt.sign(
-        {_id: resp.value._id}, 
-        process.env.REFRESH_TOKEN_SECRET
-    )
-
-    // store refresh token in local storage
-    const storageKey = `${user._id}_REFRESH_TOKEN`
-    await client.set(storageKey, refreshToken)
-    const newObj = {...resp.value._doc, token: accessToken}
+    const token = signJwtWebToken(user, client)
     
-    wrapSuccessResponse(res, 200, _.omit(newObj, ['password']), null)
+    wrapSuccessResponse(
+        res, 
+        200, 
+        _.omit(resp.value._doc,['password']),
+         null, token)
 
 }
 
@@ -232,16 +222,21 @@ exports.userLogin = async (req, res) => {
     if (user == null)
         return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)
 
-    if (new Date() < user.lockPeriod) 
-        return wrapFailureResponse(res, 500, "Sorry cannot try until the time elapses.")
+    // if (new Date() < user.lockPeriod) 
+    //     return wrapFailureResponse(res, 500, "Sorry cannot try until the time elapses.")
 
     const pinConfirmationStatus = bcrypt.compareSync(request.pin, user.password)
     if (!pinConfirmationStatus) {
-        // check if account is deactivate
-        // increase count of invalid login attempts
-        
+        return wrapFailureResponse(res, 404, "wrong password", null)
     }else{
         // success 
+        const token = signJwtWebToken(user, client)
+        wrapSuccessResponse(
+            res, 
+            200, 
+            _.omit(user,['password']),
+             null, token)
+    
     }
 }
 

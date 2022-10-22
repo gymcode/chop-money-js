@@ -1,0 +1,20 @@
+TODO
+
+For the authentication middleware
+1. Get the access token from the headers
+return an error message if it's empty (No auth token provided in the headers)
+
+2. Check if the token starts with "bearer"
+return an error message if it does not start with "bearer" (auth token must begin with Bearer)
+
+3. Get the auth token and verify the auth token
+return an error message if the verification fails (Do not have access to this auth token)
+
+4. First get the userId and use it to fetch the user data
+return an error message if there is no user like that 
+
+5. Check if the token has expired 
+if the token has expire but the user has a refresh token ?
+    generate a new access token for the user 
+else 
+    user should login to get a new access token
