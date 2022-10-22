@@ -219,9 +219,10 @@ exports.userLogin = async (req, res) => {
     const msisdn = msg
     // getting the user details based on the msisdn
     const user = await User.findOne({ msisdn: msisdn }).exec()
+    console.log(user)
     if (user == null)
         return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)
-    
+
     // if (new Date() < user.lockPeriod) 
     //     return wrapFailureResponse(res, 500, "Sorry cannot try until the time elapses.")
 
@@ -230,7 +231,7 @@ exports.userLogin = async (req, res) => {
         return wrapFailureResponse(res, 404, "wrong password", null)
     }else{
         // success 
-        const token = signJwtWebToken(user, client)
+        const token = await signJwtWebToken(user, client)
         wrapSuccessResponse(
             res, 
             200, 
