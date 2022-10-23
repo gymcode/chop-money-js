@@ -32,6 +32,8 @@ function isUserAuthenticated(client){
 
             const token = authHeader.substring(7)
             const data = verifySignedJwtWebToken(token, process.env.ACCESS_TOKEN_SECRET)
+            console.log(data, "coming from the data")
+
             payload = data.payload
 
             if (data.payload == null && !data.expired) wrapFailureResponse(res, 400, "Authorized access get the user details", null)
@@ -53,10 +55,9 @@ function isUserAuthenticated(client){
                  accessToken = jwt.sign(
                     {_id: refreshTokenVerification.payload._id}, 
                     process.env.ACCESS_TOKEN_SECRET,
-                    {expiresIn: "10s"}
+                    {expiresIn: "1d"}
                 )
             }
-            
 
             // use the id in the payload to get the user data 
             const user = await User.findOne({ _id: payload._id }).exec()
