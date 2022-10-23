@@ -242,18 +242,35 @@ exports.userLogin = async (req, res) => {
 
 // it should handle getting a single user 
 exports.getUser = (req, res) => {
-    const user = res.locals.user_info
-    res.send(user)
+    const {user, token} = res.locals.user_info
+
+    if (user == null)
+        return wrapFailureResponse(res, 404, "User not found", null)
+    
+    wrapSuccessResponse(
+        res, 
+        200, 
+        _.omit(user,['password']),
+            null, token)
+    
 }
 
 // it should update user details 
 exports.updateUserDetails = (req, res) => {
-    res.send("bambi and the rest")
+    const {user, token} = res.locals.user_info
+
+    if (user == null)
+        return wrapFailureResponse(res, 404, "User not found", null)
 }
 
 // it should sign out user 
 exports.logOut = (req, res) => {
-    res.send("log me out please")
+    const {user, token} = res.locals.user_info
+
+    if (user == null)
+        return wrapFailureResponse(res, 404, "User not found", null)
+
+    // delete the access token the refresh token 
 }
 
 
