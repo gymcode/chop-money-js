@@ -4,7 +4,6 @@ const GenerateOTP = require("../utils/generateOtp")
 const client = require("../config/redis")
 const bcrypt = require("bcryptjs")
 const { getMinutes } = require("../utils/getMinutes")
-const jwt = require('jsonwebtoken')
 
 // user model
 const User = require("../models/User")
@@ -243,7 +242,8 @@ exports.userLogin = async (req, res) => {
 
 // it should handle getting a single user 
 exports.getUser = (req, res) => {
-    res.send("get a user")
+    const user = res.locals.user_info
+    res.send(user)
 }
 
 // it should update user details 

@@ -20,12 +20,15 @@ async function signJwtWebToken(user, client){
     return accessToken
 }
 
-function verifySignedJwtWebToken(token){
+function verifySignedJwtWebToken(token, secret){
     try {
-        const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
-        return payload;
+        const payload = jwt.verify(token, secret)
+        return {payload, error: false, expired: false};
     } catch (error) {
-        console.log(error)
+        return {
+            payload: null, 
+            error: error.message, 
+            expired: error.message.includes("jwt expired")} 
     }
 }
 

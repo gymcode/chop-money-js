@@ -1,5 +1,6 @@
 const express = require("express")
 const router = express.Router()
+const client = require("../config/redis")
 
 // schemas 
 const {RegistrationSchema} = require("../utils/joiValidation")
@@ -22,7 +23,7 @@ router.post('/login', userController.userLogin)
 
 router.put("/:userID", userController.updateUserDetails)
 
-router.get("/:userID", isUserAuthenticated(), userController.getUser)
+router.get("/:userID", isUserAuthenticated(client), userController.getUser)
 
 router.get("/logout", userController.logOut)
 
