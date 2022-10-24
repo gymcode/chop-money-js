@@ -5,7 +5,7 @@ async function signJwtWebToken(user, client){
     const accessToken = jwt.sign(
         {_id: user._id}, 
         process.env.ACCESS_TOKEN_SECRET,
-        {expiresIn: "1d"}
+        {expiresIn: "20s"}
     )
 
     // expires only when the user logs out
@@ -17,7 +17,7 @@ async function signJwtWebToken(user, client){
     // store refresh token in local storage
     const storageKeyRefresh = `${user._id}_REFRESH_TOKEN`
     await client.set(storageKeyRefresh, refreshToken)
-    await client.set(accessToken, {active: true})
+    await client.set(accessToken, JSON.stringify({active: true}))
     return accessToken
 }
 
