@@ -24,7 +24,6 @@ function isUserAuthenticated(client){
 
             // getting from the headers 
             const authHeader = req.headers["authorization"]
-            console.log(authHeader)
 
             if (authHeader == undefined) wrapFailureResponse(res, 400, "Authorization header not found", null)
 
@@ -32,11 +31,12 @@ function isUserAuthenticated(client){
 
             const token = authHeader.substring(7)
             const data = verifySignedJwtWebToken(token, process.env.ACCESS_TOKEN_SECRET)
-            console.log(data, "coming from the data")
 
             payload = data.payload
 
-            if (data.payload == null && !data.expired) wrapFailureResponse(res, 400, "Authorized access get the user details", null)
+            if (data.payload == null && !data.expired) wrapFailureResponse(res, 400, "Un-authorized access", null)
+
+            
 
             // checking if the token has expired 
             if (data.payload == null && data.expired){
@@ -48,7 +48,6 @@ function isUserAuthenticated(client){
 
                 // verify the refresh token and generate a new token for the user 
                 const refreshTokenVerification = verifySignedJwtWebToken(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-                console.log(refreshTokenVerification)
 
                 if(refreshTokenVerification.payload == null) wrapFailureResponse(res, 400, "Messed up", null)
 
