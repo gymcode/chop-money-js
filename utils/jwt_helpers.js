@@ -15,10 +15,9 @@ async function signJwtWebToken(user, client){
     )
 
     // store refresh token in local storage
-    const storageKey_refresh = `${user._id}_REFRESH_TOKEN`
-    const storageKey_access = `${user._id}_ACCESS_TOKEN`
-    await client.set(storageKey_refresh, refreshToken)
-    await client.set(storageKey_access, accessToken)
+    const storageKeyRefresh = `${user._id}_REFRESH_TOKEN`
+    await client.set(storageKeyRefresh, refreshToken)
+    await client.set(accessToken, {active: true})
     return accessToken
 }
 

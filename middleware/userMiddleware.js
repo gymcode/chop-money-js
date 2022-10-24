@@ -36,11 +36,16 @@ function isUserAuthenticated(client){
 
             if (data.payload == null && !data.expired) wrapFailureResponse(res, 400, "Un-authorized access", null)
 
-            
+            // check for the active status of the token
+            const value = await client.get(token)
+            if(!value.active) wrapFailureResponse(res, 400, "Un-authorized access. Try logging in ", null)
 
             // checking if the token has expired 
             if (data.payload == null && data.expired){
                 payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, {ignoreExpiration: true} );
+
+                // delete the token from local storage 
+                await client.del(token)
                 
                 // use the id from the payload to get the refresh token
                 const storage_key = `${payload._id}_REFRESH_TOKEN`
@@ -56,6 +61,8 @@ function isUserAuthenticated(client){
                     process.env.ACCESS_TOKEN_SECRET,
                     {expiresIn: "1d"}
                 )
+
+                await client.set(accessToken, {active: true})
             }
 
             // use the id in the payload to get the user data 
