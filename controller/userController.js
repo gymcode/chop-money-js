@@ -265,12 +265,17 @@ exports.updateUserDetails = (req, res) => {
 
 // it should sign out user 
 exports.logOut = (req, res) => {
-    const {user, token} = res.locals.user_info
+    const {user} = res.locals.user_info
 
     if (user == null)
         return wrapFailureResponse(res, 404, "User not found", null)
 
-    // delete the access token the refresh token 
+    // deleting the refresh token from the cache
+    const storageKey = `${user._id}_REFRESH_TOKEN`
+    client.del(storageKey)
+
+    wrapSuccessResponse(res, 200, null,null, "")
+
 }
 
 
