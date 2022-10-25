@@ -41,5 +41,9 @@ exports.createAccount = async(req, res)=>{
         return wrapFailureResponse(res, 500, "Could not insert in the database", null)
 
     // create an object for the 
+    for (let index = 0; index < array.length; index++) {
+        const element = array[index];
+        
+    }d
 
 }
