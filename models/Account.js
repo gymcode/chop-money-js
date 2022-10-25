@@ -13,8 +13,10 @@ const accountSchema = new Schema({
     endDate: {type: Date},
     payTime: {type: String},
     totalPayAmount: Double,
-    Remainder: Double
-})
+    remainder: Double,
+    transactions: [{type: Schema.Types.ObjectId, ref: 'transactions'}],
+    version: {type: Number, default: 1}
+}, {timestamps: true})
 
 const model = mongoose.model("accounts", accountSchema)
 
