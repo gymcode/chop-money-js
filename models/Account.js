@@ -7,13 +7,14 @@ const accountSchema = new Schema({
     beneficiaryContact: {type: String},
     beneficiaryName: String,
     ownerContact: String,
+    ownerName: String,
     payFrequency: {type: String, enum: ["DAILY", "WEEKLY", "BI-WEEKLY"]},
     payFrequencyAmount: Double,
     startDate: {type: Date, default: new Date()},
     endDate: {type: Date},
     payTime: {type: String},
     totalPayAmount: Double,
-    remainder: Double,
+    remainder: {type:Double, default: 0.0},
     transactions: [{type: Schema.Types.ObjectId, ref: 'transactions'}],
     version: {type: Number, default: 1}
 }, {timestamps: true})
