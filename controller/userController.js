@@ -62,7 +62,6 @@ exports.userRegistration = async (req, res) => {
     wrapSuccessResponse(res, 200, user)
 }
 
-
 /*
 it should confirm otp
 */
@@ -117,7 +116,6 @@ exports.confirmOTP = async (req, res) => {
     wrapSuccessResponse(res, 200, resp.value, null)
 }
 
-
 /*
 it should resend otp
 */ 
@@ -153,7 +151,6 @@ exports.resendOTP = async (req, res) => {
     
     wrapSuccessResponse(res, 200, user)
 }
-
 
 /*
 it should set pin
@@ -205,8 +202,9 @@ exports.setPin = async (req, res) => {
 
 }
 
-
-// it shoudld handle logging in a new user and storing auth token
+/*
+it shoudld handle logging in a new user and storing auth token
+*/ 
 exports.userLogin = async (req, res) => {
     const request = req.body
 
@@ -240,7 +238,9 @@ exports.userLogin = async (req, res) => {
     }
 }
 
-// it should handle getting a single user 
+/*
+it should handle getting a single user 
+*/ 
 exports.getUser = (req, res) => {
     const {user, token} = res.locals.user_info
 
@@ -255,7 +255,9 @@ exports.getUser = (req, res) => {
     
 }
 
-// it should update user details 
+/*
+it should update user details 
+*/ 
 exports.updateUserDetails = (req, res) => {
     const {user, token} = res.locals.user_info
 
@@ -263,7 +265,9 @@ exports.updateUserDetails = (req, res) => {
         return wrapFailureResponse(res, 404, "User not found", null)
 }
 
-// it should sign out user 
+/*
+it should sign out user 
+*/ 
 exports.logOut = (req, res) => {
     const {user, token} = res.locals.user_info
 
@@ -278,6 +282,16 @@ exports.logOut = (req, res) => {
     client.del(storageKey)
 
     wrapSuccessResponse(res, 200, null,null, "")
+
+}
+
+
+/**
+ * Deleting user account
+ * @param {*} req 
+ * @param {*} res 
+ */
+exports.delete = (req, res) => {
 
 }
 

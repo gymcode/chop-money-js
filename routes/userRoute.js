@@ -27,5 +27,7 @@ router.get("/:userID", isUserAuthenticated(client), userController.getUser)
 
 router.delete("/logout",isUserAuthenticated(client), userController.logOut)
 
+router.delete("/delete", isUserAuthenticated(client), userController.delete)
+
 
 module.exports = router
