@@ -3,7 +3,7 @@ const { wrapFailureResponse, wrapSuccessResponse } = require("../shared/response
 const GenerateOTP = require("../utils/generateOtp")
 const client = require("../config/redis")
 const bcrypt = require("bcryptjs")
-const { getMinutes } = require("../utils/getMinutes")
+const { getMinutes } = require("../utils/dateTimeHelpers")
 
 // user model
 const User = require("../models/User")

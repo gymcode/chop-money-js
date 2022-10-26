@@ -1,4 +1,9 @@
 const Account = require("../models/Account")
+const {
+    diffDays, 
+    getCurrentDateTime, 
+    getDate
+} = require("../utils/dateTimeHelpers")
 /*
 creating an account
 */
@@ -40,10 +45,27 @@ exports.createAccount = async(req, res)=>{
     if (account == null)
         return wrapFailureResponse(res, 500, "Could not insert in the database", null)
 
-    // create an object for the 
-    for (let index = 0; index < array.length; index++) {
-        const element = array[index];
+    // get the difference between the dates  
+    const days = diffDays(request.startDate, request.endDate)
+
+    const transactionAccountArray = []    
+
+    for (let index = 0; index < days; index++) {
+        const transactionDate = getCurrentDateTime(24 * index);
         
-    }d
+        const transactionObject = {
+            date: transactionDate,
+            time: request.payTime,
+            transactionID: "dasdasddadada",
+            transactionAmount: request.payFrequencyAmount
+        }
+        transactionAccountArray.push(transactionObject)
+    }
+
+    // create an object for the 
+    if (request.isCustomized){
+        // remove the dates and append the new dates and time
+        
+    }
 
 }
