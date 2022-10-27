@@ -52,20 +52,41 @@ exports.createAccount = async(req, res)=>{
 
     for (let index = 0; index < days; index++) {
         const transactionDate = getCurrentDateTime(24 * index);
-        
+        const simplifiedDate = getDate(transactionDate)
+        let amount = request.payTime
+
         const transactionObject = {
-            date: transactionDate,
+            date: simplifiedDate,
             time: request.payTime,
             transactionID: "dasdasddadada",
-            transactionAmount: request.payFrequencyAmount
+            transactionAmount: amount
         }
         transactionAccountArray.push(transactionObject)
     }
 
     // create an object for the 
     if (request.isCustomized){
+        const arr = request.customizedArray
         // remove the dates and append the new dates and time
-        
+        for (let index = 0; index < days; index++) {
+            const transactionDate = getCurrentDateTime(24 * index);
+            let simplifiedDate = getDate(transactionDate)
+            let amount = request.payTime
+    
+            for (let j = 0; j < arr.length; j++) {
+                if (arr[j].date == getDate(transactionDate)) {
+                    simplifiedDate = arr[j].date
+                    amount = arr[j].transactionAmount
+                }
+            }
+            const transactionObject = {
+                date: simplifiedDate,
+                time: request.payTime,
+                transactionID: "dasdasddadada",
+                transactionAmount: amount
+            }
+            transactionAccountArray.push(transactionObject)
+        }   
     }
 
 }

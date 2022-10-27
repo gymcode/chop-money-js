@@ -11,9 +11,13 @@ app.use(express.json())
 
 //routes
 const userRoutes = require("./routes/userRoute")
+const accountRoutes = require("./routes/accountRoute")
 
-
+// all user routes
 app.use(`${BASE_URL}/user`, userRoutes)
+
+// account routes
+app.use(`${BASE_URL}/account`, accountRoutes)
 
 app.listen(port, (uri) => {
     // establish the database connection 
