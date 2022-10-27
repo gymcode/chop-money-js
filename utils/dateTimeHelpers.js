@@ -15,6 +15,12 @@ function diffDays(startDate, endDate){
     return diffDays;
 }
 
+function getWeeksDiff(startDate, endDate) {
+    const msInWeek = 1000 * 60 * 60 * 24 * 7;
+  
+    return Math.round(Math.abs(endDate - startDate) / msInWeek);
+}
+
 function getCurrentDateTime(hours){
     const currentDate = new Date()
 
@@ -42,5 +48,6 @@ module.exports = {
     getMinutes,
     diffDays,
     getDate,
-    getCurrentDateTime
+    getCurrentDateTime,
+    getWeeksDiff
 }
