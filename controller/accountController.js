@@ -3,7 +3,8 @@ const {
     diffDays, 
     getCurrentDateTime, 
     getDate,
-    getWeeksDiff
+    getWeeksDiff,
+    getBiWeeksDiff
 } = require("../utils/dateTimeHelpers")
 /*
 creating an account
@@ -52,6 +53,7 @@ exports.createAccount = async(req, res)=>{
     // get the difference between the dates  
     const days = diffDays(request.startDate, endDate)
     const weeks = getWeeksDiff(request.startDate, endDate)
+    const biWeeks = getBiWeeksDiff(request.startDate, endDate)
 
     let object;
     switch (request.payFrequency) {
@@ -64,7 +66,7 @@ exports.createAccount = async(req, res)=>{
             break;
 
         case 'BI-WEEKLY'.toUpperCase(): 
-            object = transactionObject(request.payTime, weeks, request.transactionAmount, 14)
+            object = transactionObject(request.payTime, biWeeks, request.transactionAmount, 14)
             break;
 
         default:

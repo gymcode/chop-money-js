@@ -21,6 +21,12 @@ function getWeeksDiff(startDate, endDate) {
     return Math.round(Math.abs(endDate - startDate) / msInWeek);
 }
 
+function getBiWeeksDiff(startDate, endDate) {
+    const msInWeek = 1000 * 60 * 60 * 24 * 7 * 2;
+  
+    return Math.round(Math.abs(endDate - startDate) / msInWeek);
+}
+
 function getCurrentDateTime(hours){
     const currentDate = new Date()
 
@@ -49,5 +55,6 @@ module.exports = {
     diffDays,
     getDate,
     getCurrentDateTime,
-    getWeeksDiff
+    getWeeksDiff,
+    getBiWeeksDiff
 }
