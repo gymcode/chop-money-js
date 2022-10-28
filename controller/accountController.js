@@ -7,6 +7,7 @@ const {
     getCurrentDateTime, 
     getDate,
 } = require("../utils/dateTimeHelpers")
+const Generate = require("../utils/generateRandomID")
 
 /*
 creating an account
@@ -29,7 +30,7 @@ exports.createAccount = async(req, res)=>{
     const numberOfDays = 31
     const totalHours = numberOfDays * 24 
     let endDate = request.endDate == "" ? getCurrentDateTime(totalHours) : request.endDate
-    
+
     // create account for user
     const accountInput = new Account({
         chopMoneyOwner: request.chopMoneyOwner,
@@ -88,14 +89,14 @@ exports.createAccount = async(req, res)=>{
                 break;
         }
 
-        // Transaction.insertMany(objectArr)
-        //     .then(function(){
-        //         console.log("inserted")
-        //         wrapSuccessResponse(res, 200, user, null, token)
-        //     })
-        //     .catch(function(err){
-        //         console.error("an error occured", err)
-        //     })
+        Transaction.insertMany(objectArr)
+            .then(function(){
+                console.log("inserted")
+                wrapSuccessResponse(res, 200, user, null, token)
+            })
+            .catch(function(err){
+                console.error("an error occured", err)
+            })
     })
 
 }
@@ -117,7 +118,7 @@ function transactionObject(arr, payTime, duration, transAmount, extra, accID){
         const transactionObject = {
             date: simplifiedDate,
             time: payTime,
-            transactionID: "dasdasddadada",
+            transactionID: `#TRAN_${Generate()}`,
             transactionAmount: amount,
             account: accID
         }
