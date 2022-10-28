@@ -18,3 +18,47 @@ if the token has expire but the user has a refresh token ?
     generate a new access token for the user 
 else 
     user should login to get a new access token
+
+
+to be remembered
+    // // create an object for the 
+    // if (request.isCustomized){
+    //     const arr = request.customizedArray
+    //     // remove the dates and append the new dates and time
+    //     switch (request.payFrequency) {
+    //         case 'DAILY'.toUpperCase():
+    //             object = isCustomizableTransactionObject(arr, request.payTime, days, request.transactionAmount, 1)
+    //             break;
+        
+    //         case 'WEEKLY'.toUpperCase(): 
+    //             object = isCustomizableTransactionObject(arr, request.payTime, days, request.transactionAmount, 1)
+    //             break;
+    
+    //         case 'BI-WEEKLY'.toUpperCase(): 
+    //             object = isCustomizableTransactionObject(arr, request.payTime, days, request.transactionAmount, 1)
+    //             break;
+    
+    //         default:
+    //             break;
+    //     }
+    // }
+
+    // function transactionObject(payTime, duration, transAmount, extra){
+//     const transactionAccountArray = []    
+
+//     for (let index = 0; index < duration; index++) {
+//         const transactionDate = getCurrentDateTime(24 * index * extra);
+//         const simplifiedDate = getDate(transactionDate)
+//         let amount = transAmount
+
+//         const transactionObject = {
+//             date: simplifiedDate,
+//             time: payTime,
+//             transactionID: "dasdasddadada",
+//             transactionAmount: amount
+//         }
+//         transactionAccountArray.push(transactionObject)
+//     }
+
+//     return transactionAccountArray;
+// }

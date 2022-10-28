@@ -55,57 +55,44 @@ exports.createAccount = async(req, res)=>{
     const weeks = getWeeksDiff(request.startDate, endDate)
     const biWeeks = getBiWeeksDiff(request.startDate, endDate)
 
-    let object;
+    let object = [];
     switch (request.payFrequency) {
         case 'DAILY'.toUpperCase():
-            object = transactionObject(request.payTime, days, request.transactionAmount, 1)
+            object = transactionObject(
+                request.customizedArray,
+                request.payTime, 
+                days, 
+                request.transactionAmount, 
+                1)
             break;
     
         case 'WEEKLY'.toUpperCase(): 
-            object = transactionObject(request.payTime, weeks, request.transactionAmount, 7)
+            object = transactionObject(
+                request.customizedArray,
+                request.payTime, 
+                weeks, 
+                request.transactionAmount, 
+                7)
             break;
 
         case 'BI-WEEKLY'.toUpperCase(): 
-            object = transactionObject(request.payTime, biWeeks, request.transactionAmount, 14)
+            object = transactionObject(
+                request.customizedArray,
+                request.payTime, 
+                biWeeks, 
+                request.transactionAmount, 
+                14)
             break;
 
         default:
             break;
     }
 
-    // create an object for the 
-    if (request.isCustomized){
-        const arr = request.customizedArray
-        // remove the dates and append the new dates and time
-        isCustomizableTransactionObject(arr, request.payTime, days, request.transactionAmount, 1)
-    }
+
 
 }
 
-
-
-
-function transactionObject(payTime, duration, transAmount, extra){
-    const transactionAccountArray = []    
-
-    for (let index = 0; index < duration; index++) {
-        const transactionDate = getCurrentDateTime(24 * index * extra);
-        const simplifiedDate = getDate(transactionDate)
-        let amount = transAmount
-
-        const transactionObject = {
-            date: simplifiedDate,
-            time: payTime,
-            transactionID: "dasdasddadada",
-            transactionAmount: amount
-        }
-        transactionAccountArray.push(transactionObject)
-    }
-
-    return transactionAccountArray;
-}
-
-function isCustomizableTransactionObject(arr, payTime, duration, transAmount, extra){
+function transactionObject(arr, payTime, duration, transAmount, extra){
     const transactionAccountArray = []    
 
     for (let index = 0; index < duration; index++) {
