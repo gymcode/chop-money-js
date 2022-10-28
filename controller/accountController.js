@@ -1,15 +1,16 @@
 const Account = require("../models/Account")
+const Transaction = require("../models/Transaction")
+const User = require("../models/User")
+const { wrapFailureResponse, wrapSuccessResponse } = require("../shared/response")
 const {
-    diffDays, 
+    diff_Days_Weeks, 
     getCurrentDateTime, 
     getDate,
-    getWeeksDiff,
-    getBiWeeksDiff
 } = require("../utils/dateTimeHelpers")
+
 /*
 creating an account
 */
-
 exports.createAccount = async(req, res)=>{
 
     const request = req.body
@@ -28,7 +29,7 @@ exports.createAccount = async(req, res)=>{
     const numberOfDays = 31
     const totalHours = numberOfDays * 24 
     let endDate = request.endDate == "" ? getCurrentDateTime(totalHours) : request.endDate
-
+    
     // create account for user
     const accountInput = new Account({
         chopMoneyOwner: request.chopMoneyOwner,
@@ -45,57 +46,64 @@ exports.createAccount = async(req, res)=>{
         totalPayAmount: request.totalPayAmount,
     })
 
-    const account = await accountInput.save()
+    accountInput.save(function (err){
+        if (err) return wrapFailureResponse(res, 500, "Could not insert", null)
 
-    if (account == null)
-        return wrapFailureResponse(res, 500, "Could not insert in the database", null)
+        // get the difference between the dates  
+        const days = diff_Days_Weeks(request.startDate, endDate)
+        const weeks = diff_Days_Weeks(request.startDate, endDate, 7)
+        const biWeeks = diff_Days_Weeks(request.startDate, endDate, 14)
 
-    // get the difference between the dates  
-    const days = diffDays(request.startDate, endDate)
-    const weeks = getWeeksDiff(request.startDate, endDate)
-    const biWeeks = getBiWeeksDiff(request.startDate, endDate)
+        let objectArr = [];
+        switch (request.payFrequency) {
+            case 'DAILY'.toUpperCase():
+                objectArr = transactionObject(
+                    request.customizedArray,
+                    request.payTime, 
+                    days, 
+                    request.payFrequencyAmount, 
+                    1, accountInput._id)
+                break;
+        
+            case 'WEEKLY'.toUpperCase(): 
+                objectArr = transactionObject(
+                    request.customizedArray,
+                    request.payTime, 
+                    weeks, 
+                    request.payFrequencyAmount, 
+                    7, accountInput._id)
+                break;
 
-    let object = [];
-    switch (request.payFrequency) {
-        case 'DAILY'.toUpperCase():
-            object = transactionObject(
-                request.customizedArray,
-                request.payTime, 
-                days, 
-                request.transactionAmount, 
-                1)
-            break;
-    
-        case 'WEEKLY'.toUpperCase(): 
-            object = transactionObject(
-                request.customizedArray,
-                request.payTime, 
-                weeks, 
-                request.transactionAmount, 
-                7)
-            break;
+            case 'BI-WEEKLY'.toUpperCase(): 
+                objectArr = transactionObject(
+                    request.customizedArray,
+                    request.payTime, 
+                    biWeeks, 
+                    request.payFrequencyAmount, 
+                    14, accountInput._id)
+                break;
 
-        case 'BI-WEEKLY'.toUpperCase(): 
-            object = transactionObject(
-                request.customizedArray,
-                request.payTime, 
-                biWeeks, 
-                request.transactionAmount, 
-                14)
-            break;
+            default:
+                console.log("it got here")
+                break;
+        }
 
-        default:
-            break;
-    }
-
-
+        // Transaction.insertMany(objectArr)
+        //     .then(function(){
+        //         console.log("inserted")
+        //         wrapSuccessResponse(res, 200, user, null, token)
+        //     })
+        //     .catch(function(err){
+        //         console.error("an error occured", err)
+        //     })
+    })
 
 }
 
-function transactionObject(arr, payTime, duration, transAmount, extra){
+function transactionObject(arr, payTime, duration, transAmount, extra, accID){
     const transactionAccountArray = []    
 
-    for (let index = 0; index < duration; index++) {
+    for (let index = 1; index < duration; index++) {
         const transactionDate = getCurrentDateTime(24 * index * extra);
         let simplifiedDate = getDate(transactionDate)
         let amount = transAmount
@@ -110,7 +118,8 @@ function transactionObject(arr, payTime, duration, transAmount, extra){
             date: simplifiedDate,
             time: payTime,
             transactionID: "dasdasddadada",
-            transactionAmount: amount
+            transactionAmount: amount,
+            account: accID
         }
         transactionAccountArray.push(transactionObject)
     }   

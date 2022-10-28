@@ -11,7 +11,8 @@ const transactionSchema = new Schema({
         enum: ["COMPLETED", "FAILED", "NEW"],
         default: "NEW"
     },
-    transactionAmount: Double,
+    transactionAmount: Number,
+    account: {type: Schema.Types.ObjectId, ref: "accounts"},
     version: {type: Number, default: 1}
 }, {timestamps: true})
 
