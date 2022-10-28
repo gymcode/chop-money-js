@@ -29,6 +29,7 @@ function isUserAuthenticated(client){
             if (!authHeader.startsWith("Bearer")) return wrapFailureResponse(res, 400, "Authorization header must start with /Bearer /", null)
 
             const token = authHeader.substring(7)
+            console.log(token)
             let accessToken = token
             const data = verifySignedJwtWebToken(token, process.env.ACCESS_TOKEN_SECRET)
 
@@ -36,7 +37,7 @@ function isUserAuthenticated(client){
 
             if (data.payload == null && !data.expired) return wrapFailureResponse(res, 400, "Un-authorized access", null)
 
-            // check for the active status of the token
+            // check for the active status of the tokenhttp://localhost:3000/api/v1/user/login
             const value = await client.get(token)
             console.log(value)
             if(value == null || !JSON.parse(value).active) return wrapFailureResponse(res, 400, "Un-authorized access. Try logging in ", null)
@@ -60,7 +61,7 @@ function isUserAuthenticated(client){
                  accessToken = jwt.sign(
                     {_id: refreshTokenVerification.payload._id}, 
                     process.env.ACCESS_TOKEN_SECRET,
-                    {expiresIn: "1d"}
+                    {expiresIn: "20s"}
                 )
 
                 await client.set(`${accessToken}`, JSON.stringify({active: true}))
