@@ -37,7 +37,8 @@ function isUserAuthenticated(client){
 
             if (data.payload == null && !data.expired) return wrapFailureResponse(res, 400, "Un-authorized access", null)
 
-            // check for the active status of the tokenhttp://localhost:3000/api/v1/user/login
+            // check for the active status of the token
+            
             const value = await client.get(token)
             console.log(value)
             if(value == null || !JSON.parse(value).active) return wrapFailureResponse(res, 400, "Un-authorized access. Try logging in ", null)
