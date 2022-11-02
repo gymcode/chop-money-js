@@ -1,6 +1,6 @@
 const Account = require("../models/Account")
 const Transaction = require("../models/Transaction")
-const User = require("../models/User")
+const SendSms = require("../config/sms")
 const { wrapFailureResponse, wrapSuccessResponse } = require("../shared/response")
 const {
     diff_Days_Weeks, 
@@ -123,6 +123,7 @@ exports.withdrawCash = async (req, res)=>{
     await client.set(storageKey, JSON.stringify(otpStorageObject))
 
     // TODO(send SMS to user with the otp)
+    SendSms(`+${msisdn}`, `Your one time password for chop money is ${code}. This is to confirm that you want to make a withdrawal.`)
 
     wrapSuccessResponse(res, 200, null, null, token)
 }
