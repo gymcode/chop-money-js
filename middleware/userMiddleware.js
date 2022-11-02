@@ -62,7 +62,7 @@ function isUserAuthenticated(client){
                  accessToken = jwt.sign(
                     {_id: refreshTokenVerification.payload._id}, 
                     process.env.ACCESS_TOKEN_SECRET,
-                    {expiresIn: "20s"}
+                    {expiresIn: "1d"}
                 )
 
                 await client.set(`${accessToken}`, JSON.stringify({active: true}))

@@ -1,1 +1,6 @@
 DB_URI = "mongodb+srv://<UserName>:<Password>@cluster0.atkt6pm.mongodb.net/?retryWrites=true&w=majority"
+PORT = 3000
+ACCESS_TOKEN_SECRET= "access lets grow"
+REFRESH_TOKEN_SECRET= "refresh lets grow"
+REDIS.URL = "redis[s]://[[username][:password]@][host][:port]"
+REDIS.PASSWORD = "DADKDBADKDJKADADDKKJABSDA"

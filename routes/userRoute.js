@@ -23,7 +23,7 @@ router.post('/login', userController.userLogin)
 
 router.put("/:userID", userController.updateUserDetails)
 
-router.get("/:userID", isUserAuthenticated(client), userController.getUser)
+router.get("/user", isUserAuthenticated(client), userController.getUser)
 
 router.delete("/logout",isUserAuthenticated(client), userController.logOut)
 
