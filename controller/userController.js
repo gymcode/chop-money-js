@@ -234,7 +234,7 @@ exports.userLogin = async (req, res) => {
         wrapSuccessResponse(
             res, 
             200, 
-            _.omit(user,['password']),
+            _.omit(JSON.parse(JSON.stringify(user)),['password']),
              null, token)
     
     }
@@ -252,7 +252,7 @@ exports.getUser = (req, res) => {
     wrapSuccessResponse(
         res, 
         200, 
-        _.omit(user,['password']),
+        _.omit(JSON.parse(JSON.stringify(user)),['password']),
             null, token)
     
 }
