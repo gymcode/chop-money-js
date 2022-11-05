@@ -1,6 +1,6 @@
 const AfricasTalking = require("africastalking")
 
-async function SendSms(recipient, message){
+async function SendSms(msisdn, message){
     const africastalking = AfricasTalking({
         apiKey: process.env.AFRICATALKING_API_KEY,
         username: process.env.AFRICASTALKING_USERNAME
@@ -8,9 +8,9 @@ async function SendSms(recipient, message){
 
     try {
         const response = await africastalking.SMS.send({
-            to: `[${recipient}]`,
+            to: `${msisdn}`,
             message: message,
-            from: "Chop Money"
+            from: '2432'
         })
         console.log(response)
     } catch (error) {
@@ -18,4 +18,4 @@ async function SendSms(recipient, message){
     }
 }
 
-module.exports = SendSms
+module.exports = {SendSms}
