@@ -8,9 +8,9 @@ async function SendSms(msisdn, message){
 
     try {
         const response = await africastalking.SMS.send({
-            to: `${msisdn}`,
+            to: `+233268211334`,
             message: message,
-            from: '2432'
+            from: 'axlxyt'
         })
         console.log(response)
     } catch (error) {

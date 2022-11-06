@@ -13,7 +13,7 @@ function wrapFailureResponse(res, statusCode, errorMsg, detailedError = null){
     })
 }
 
-function wrapSuccessResponse(res, statusCode, data=null, detailedError = null, token = null){
+function wrapSuccessResponse(res, statusCode, data=null, detailedError = null, token = ""){
     res.status(statusCode).json({
         code: CODE_SUCCESS,
         msg: "success",
