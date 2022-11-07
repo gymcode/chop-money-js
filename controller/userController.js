@@ -4,7 +4,7 @@ const GenerateOTP = require("../utils/generateOtp")
 const client = require("../config/redis")
 const bcrypt = require("bcryptjs")
 const { getMinutes } = require("../utils/dateTimeHelpers")
-const {SendSms} = require("../config/sms")
+const {NaloSendSms} = require("../config/sms")
 
 // user model
 const User = require("../models/User")
@@ -59,7 +59,7 @@ exports.userRegistration = async (req, res) => {
     await client.set(storageKey, JSON.stringify(otpStorageObject))
 
     // TODO(send SMS to user with the otp)
-    SendSms(`+${msisdn}`,`Your one time password for chop money is ${code}`)
+    NaloSendSms(`+${msisdn}`,`Your one time password for chop money is ${code}`)
     wrapSuccessResponse(res, 200, user)
 }
 
@@ -149,7 +149,7 @@ exports.resendOTP = async (req, res) => {
     await client.set(storageKey, JSON.stringify(otpStorageObject))
 
     // TODO(send SMS to user with the otp)
-    SendSms(`+${msisdn}`,`Your one time password for chop money is ${code}`)
+    NaloSendSms(`+${msisdn}`,`Your one time password for chop money is ${code}`)
     
     wrapSuccessResponse(res, 200, user)
 }
