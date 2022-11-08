@@ -194,7 +194,7 @@ exports.setPin = async (req, res) => {
 
     // TODO generate and store token
     // expires in one day
-    const token = signJwtWebToken(user, client)
+    const token = await signJwtWebToken(user, client)
     
     wrapSuccessResponse(
         res, 
