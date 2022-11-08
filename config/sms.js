@@ -21,13 +21,10 @@ async function SendSms(msisdn, message){
 
 async function NaloSendSms(msisdn, message){
     try {
-        const username = process.env.NALO_SMS_USERNAME
-        const password = process.env.NALO_SMS_PASSWORD
         const authKey = process.env.NALO_SMS_AUTH_KEY
-        const anotherOne = `https://sms.nalosolutions.com/smsbackend/clientapi/Resl_Nalo/send-message/?key=&type=0&destination=233268211334&dlr=1&source=NALO&message=This+is+a+test+from+Mars`
-        const critical = `https://sms.nalosolutions.com/smsbackend/clientapi/Resl_Nalo/send-message/?key=${authKey}&type=0&destination=233268211334&dlr=1&source=NALO&message=This+is+a+test+from+Mars`
-        const smsUri = `https://sms.nalosolutions.com/smsbackend/clientapi/Resl_Nalo/send-message/?username=${username}&password=${password}&type=0&destination=233268211334&dlr=1&source=NALO&message=${message}`
-        const response = await axios.get(critical)
+        const smsUri = `https://sms.nalosolutions.com/smsbackend/clientapi/Resl_Nalo/send-message/?key=${authKey}&type=0&destination=${msisdn}&dlr=1&source=Chopmoney&message=${message}`
+        // smsUri = `https://sms.nalosolutions.com/smsbackend/clientapi/Resl_Nalo/send-message/?username=${username}&password=${password}&type=0&destination=233268211334&dlr=1&source=NALO&message=${message}`
+        const response = await axios.get(smsUri)
         console.log(response.data)
     } catch (error) {
         console.error(error)
