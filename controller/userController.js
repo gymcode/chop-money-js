@@ -21,7 +21,7 @@ exports.userRegistration = async (req, res) => {
     const request = req.body
     const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
     if (error) {
-        wrapFailureResponse(res, 422, msg, null)
+        return wrapFailureResponse(res, 422, msg, null)
     }
     const msisdn = msg
 
@@ -60,7 +60,7 @@ exports.userRegistration = async (req, res) => {
 
     // TODO(send SMS to user with the otp)
     NaloSendSms(`+${msisdn}`,`Your one time password for chop money is ${code}`)
-    wrapSuccessResponse(res, 200, user)
+    return wrapSuccessResponse(res, 200, user)
 }
 
 /*
@@ -71,7 +71,7 @@ exports.confirmOTP = async (req, res) => {
     const request = req.body
     const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
     if (error) {
-        wrapFailureResponse(res, 422, msg, null)
+        return wrapFailureResponse(res, 422, msg, null)
     }
 
     const msisdn = msg
@@ -114,7 +114,7 @@ exports.confirmOTP = async (req, res) => {
     if (!resp.value.isOtpConfirmed)
         return wrapFailureResponse(res, 200, "Could not update OTP confirmation status", null)
 
-    wrapSuccessResponse(res, 200, resp.value, null)
+    return wrapSuccessResponse(res, 200, resp.value, null)
 }
 
 /*
@@ -124,7 +124,7 @@ exports.resendOTP = async (req, res) => {
     const request = req.body
     const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
     if (error) {
-        wrapFailureResponse(res, 422, msg, null)
+        return wrapFailureResponse(res, 422, msg, null)
     }
 
     const msisdn = msg
@@ -151,7 +151,7 @@ exports.resendOTP = async (req, res) => {
     // TODO(send SMS to user with the otp)
     NaloSendSms(`+${msisdn}`,`Your one time password for chop money is ${code}`)
     
-    wrapSuccessResponse(res, 200, user)
+    return wrapSuccessResponse(res, 200, user)
 }
 
 /*
@@ -162,7 +162,7 @@ exports.setPin = async (req, res) => {
 
     const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
     if (error) {
-        wrapFailureResponse(res, 422, msg, null)
+        return wrapFailureResponse(res, 422, msg, null)
     }
 
     const msisdn = msg
@@ -196,7 +196,7 @@ exports.setPin = async (req, res) => {
     // expires in one day
     const token = await signJwtWebToken(user, client)
     
-    wrapSuccessResponse(
+    return wrapSuccessResponse(
         res, 
         200, 
         _.omit(resp.value._doc,['password']),
@@ -211,16 +211,15 @@ exports.userLogin = async (req, res) => {
     const request = req.body
 
     const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
-    if (error) {
-        wrapFailureResponse(res, 422, msg, null)
-    }
+    if (error) return wrapFailureResponse(res, 422, msg, null)
 
     const msisdn = msg
     // getting the user details based on the msisdn
     const user = await User.findOne({ msisdn: msisdn }).exec()
-    console.log(user)
+    
     if (user == null)
         return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)
+    
 
     // if (new Date() < user.lockPeriod) 
     //     return wrapFailureResponse(res, 500, "Sorry cannot try until the time elapses.")
@@ -231,7 +230,7 @@ exports.userLogin = async (req, res) => {
     }else{
         // success 
         const token = await signJwtWebToken(user, client)
-        wrapSuccessResponse(
+        return wrapSuccessResponse(
             res, 
             200, 
             _.omit(JSON.parse(JSON.stringify(user)),['password']),
@@ -249,7 +248,7 @@ exports.getUser = (req, res) => {
     if (user == null)
         return wrapFailureResponse(res, 404, "User not found", null)
     
-    wrapSuccessResponse(
+    return wrapSuccessResponse(
         res, 
         200, 
         _.omit(JSON.parse(JSON.stringify(user)),['password']),
@@ -283,7 +282,7 @@ exports.logOut = (req, res) => {
     const storageKey = `${user._id}_REFRESH_TOKEN`
     client.del(storageKey)
 
-    wrapSuccessResponse(res, 200, null,null, "")
+    return wrapSuccessResponse(res, 200, null,null, "")
 
 }
 
