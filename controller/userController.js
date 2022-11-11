@@ -21,7 +21,7 @@ exports.userRegistration = async (req, res) => {
     const request = req.body
     const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
     if (error) {
-        wrapFailureResponse(res, 422, msg, null)
+        return wrapFailureResponse(res, 422, msg, null)
     }
     const msisdn = msg
 
@@ -71,7 +71,7 @@ exports.confirmOTP = async (req, res) => {
     const request = req.body
     const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
     if (error) {
-        wrapFailureResponse(res, 422, msg, null)
+        return wrapFailureResponse(res, 422, msg, null)
     }
 
     const msisdn = msg
@@ -124,7 +124,7 @@ exports.resendOTP = async (req, res) => {
     const request = req.body
     const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
     if (error) {
-        wrapFailureResponse(res, 422, msg, null)
+        return wrapFailureResponse(res, 422, msg, null)
     }
 
     const msisdn = msg
@@ -162,7 +162,7 @@ exports.setPin = async (req, res) => {
 
     const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
     if (error) {
-        wrapFailureResponse(res, 422, msg, null)
+        return wrapFailureResponse(res, 422, msg, null)
     }
 
     const msisdn = msg
@@ -212,7 +212,7 @@ exports.userLogin = async (req, res) => {
 
     const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
     if (error) {
-        wrapFailureResponse(res, 422, msg, null)
+        return wrapFailureResponse(res, 422, msg, null)
     }
 
     const msisdn = msg
@@ -221,6 +221,10 @@ exports.userLogin = async (req, res) => {
     console.log(user)
     if (user == null)
         return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)
+
+    // checking if the user's password exists in the database
+    if (user.password == undefined)
+        return wrapFailureResponse(res, 404, "Password does not seem to have been set whiles the pin was being set", null)
 
     // if (new Date() < user.lockPeriod) 
     //     return wrapFailureResponse(res, 500, "Sorry cannot try until the time elapses.")

@@ -5,7 +5,7 @@ async function signJwtWebToken(user, client){
     const accessToken = jwt.sign(
         {_id: user._id}, 
         process.env.ACCESS_TOKEN_SECRET,
-        {expiresIn: "1d"}
+        {expiresIn: "20s"}
     )
 
     // expires only when the user logs out
