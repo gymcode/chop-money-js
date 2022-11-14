@@ -66,6 +66,13 @@ exports.userRegistration = async (req, res) => {
         console.log(error)
         return wrapFailureResponse(res, 500, `An Error occured: ${error}`)
     }
+
+    await client.set
+    (storageKey, JSON.stringify(otpStorageObject))
+
+    // TODO(send SMS to user with the otp)
+    NaloSendSms(`+${msisdn}`,`Your one time password for chop money is ${code}`)
+    return wrapSuccessResponse(res, 200, user)
 }
 
 /*
