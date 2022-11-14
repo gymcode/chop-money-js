@@ -3,7 +3,7 @@ const router = express.Router()
 const client = require("../config/redis")
 
 // schemas 
-const {RegistrationSchema} = require("../utils/joiValidation")
+const {RegistrationSchema, UpdateUserSchema} = require("../utils/joiValidation")
 
 // middlewares 
 const {userValidationMiddleware, isUserAuthenticated} = require("../middleware/userMiddleware")
@@ -21,7 +21,7 @@ router.put("/set-pin", userController.setPin)
 
 router.post('/login', userController.userLogin)
 
-router.put("/:userID", userController.updateUserDetails)
+router.put("/",userValidationMiddleware(UpdateUserSchema), isUserAuthenticated(client), userController.updateUserDetails)
 
 router.get("/user", isUserAuthenticated(client), userController.getUser)
 
