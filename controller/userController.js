@@ -66,13 +66,6 @@ exports.userRegistration = async (req, res) => {
         console.log(error)
         return wrapFailureResponse(res, 500, `An Error occured: ${error}`)
     }
-
-    await client.set
-    (storageKey, JSON.stringify(otpStorageObject))
-
-    // TODO(send SMS to user with the otp)
-    NaloSendSms(`+${msisdn}`,`Your one time password for chop money is ${code}`)
-    return wrapSuccessResponse(res, 200, user)
 }
 
 /*
@@ -175,6 +168,66 @@ exports.resendOTP = async (req, res) => {
         return wrapFailureResponse(res, 500, `An Error occured: ${error}`)
     }
 }
+
+exports.resetPin = async (req, res) => {
+    try {
+        // validating the msisdn based on the country code
+        const request = req.body
+        console.log(request)
+        const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
+        if (error) {
+            return wrapFailureResponse(res, 422, msg, null)
+        }
+        const msisdn = msg
+
+        // checking in the database if the user already exists
+        let user = await User.findOne({ msisdn: msisdn }).exec()
+        if (user == null)
+            return wrapFailureResponse(res, 404, "User does not exist. Please sign up", null)
+        
+
+        // generate code  hash code 
+        const code = GenerateOTP()
+        console.log(code)
+        const codeHash = bcrypt.hashSync(`${code}`, bcrypt.genSaltSync(10))
+        const storageKey = `${user._id}_OTP`
+
+        const expiryDate = getMinutes(5)
+        const otpStorageObject = {
+            code: codeHash,
+            expire_at: expiryDate
+        }
+
+        await client.set(storageKey, JSON.stringify(otpStorageObject))
+
+        // update user details 
+        const resp = await User.findOneAndUpdate({ _id: user._id },
+            {
+                isPinSet: false,
+                activated: false,
+                isOtpConfirmed: false,
+                update_at: new Date()
+            },
+            {
+                new: true,
+                upsert: true,
+                rawResult: true // Return the raw result from the MongoDB driver
+            })
+        // console.log(resp)
+        if (resp.ok != 1)
+            return wrapFailureResponse(res, 200, "Could not reset account", null)
+
+
+        // TODO(send SMS to user with the otp)
+        NaloSendSms(`+${msisdn}`, `Your one time password for chop money is ${code}`)
+
+        wrapSuccessResponse(res, 200, user)
+    } catch (error) {
+        console.log(error)
+        return wrapFailureResponse(res, 500, `An Error occured: ${error}`)
+    }
+}
+
 
 /*
 it should set pin
@@ -325,8 +378,8 @@ exports.updateUserDetails = async(req, res) => {
                 rawResult: true // Return the raw result from the MongoDB driver
             })
 
-        if (!resp.value.isOtpConfirmed)
-            return wrapFailureResponse(res, 200, "Could not update OTP confirmation status", null)
+        if (resp.ok != 1)
+            return wrapFailureResponse(res, 200, "Could not update user detail", null)
 
         wrapSuccessResponse(res, 200, _.omit(resp.value._doc, ['password']), null, token)
     } catch (error) {

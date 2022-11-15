@@ -21,10 +21,10 @@ app.use(`${BASE_URL}/user`, userRoutes)
 // account routes
 app.use(`${BASE_URL}/account`, accountRoutes)
 
-app.listen(port, (uri) => {
+app.listen(port, () => {
     // establish the database connection 
     Database_Connection()
-    console.log(`Example app listening on port ${uri}`)
+    console.log(`Example app listening on port ${port}`)
 
     // run cron configuration and call 
     // cron.schedule('* * * * * *', () => {
