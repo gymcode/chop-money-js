@@ -47,7 +47,7 @@ exports.createAccount = async(req, res)=>{
         totalPayAmount: request.totalPayAmount,
     })
 
-    accountInput.save(function (err){
+    accountInput.save(function (err, results){
         if (err) return wrapFailureResponse(res, 500, "Could not insert", null)
 
         // get the difference between the dates  
@@ -92,7 +92,7 @@ exports.createAccount = async(req, res)=>{
         Transaction.insertMany(objectArr)
             .then(function(){
                 console.log("inserted")
-                wrapSuccessResponse(res, 200, user, null, token)
+                wrapSuccessResponse(res, 200, results, null, token)
             })
             .catch(function(err){
                 console.error("an error occured", err)
