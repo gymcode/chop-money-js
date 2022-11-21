@@ -9,6 +9,10 @@ router.post("/activate-account",  isUserAuthenticated(client), accountController
 
 router.get("/withdraw", isUserAuthenticated(client), accountController.withdrawCash)
 
-router.get("/confirm-otp", isUserAuthenticated(client), accountController.confirmCashWithdrawalOTP)
+// router.get("/:accountId", isUserAuthenticated(client), accountController.getAccount)
+
+// router.put("/:accountId", isUserAuthenticated(client), accountController.updateAccount)
+
+// router.delete("/:accountId", isUserAuthenticated(client), accountController.deleteUserAccount)
 
 module.exports = router

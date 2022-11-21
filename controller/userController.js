@@ -28,8 +28,14 @@ exports.userRegistration = async (req, res) => {
 
         // checking in the database if the user already exists
         let user = await User.findOne({ msisdn: msisdn }).exec()
-        if (user != null)
-            return wrapFailureResponse(res, 404, "User already exists", null)
+
+        if (user != null) {
+            if (user.isPinSet)
+                return wrapFailureResponse(res, 404, "User already exists", null)
+
+            if (!user.isOtpConfirmed || !user.isPinSet)
+                return wrapSuccessResponse(res, 200, user)
+        }
 
 
         // add user
@@ -184,7 +190,7 @@ exports.resetPin = async (req, res) => {
         let user = await User.findOne({ msisdn: msisdn }).exec()
         if (user == null)
             return wrapFailureResponse(res, 404, "User does not exist. Please sign up", null)
-        
+
 
         // generate code  hash code 
         const code = GenerateOTP()
@@ -354,23 +360,23 @@ exports.getUser = (req, res) => {
 /*
 it should update user details 
 */
-exports.updateUserDetails = async(req, res) => {
+exports.updateUserDetails = async (req, res) => {
     try {
         const { user, token } = res.locals.user_info
 
         const request = req.body
-    
+
         if (user == null)
-            return wrapFailureResponse(res, 404, "User not found", null)   
+            return wrapFailureResponse(res, 404, "User not found", null)
 
         // update the users details 
         const resp = await User.findOneAndUpdate(
-            { _id: user._id }, 
-            { 
+            { _id: user._id },
+            {
                 username: request.username,
                 email: request.email,
-                gender: request.gender, 
-                update_at: new Date() 
+                gender: request.gender,
+                update_at: new Date()
             },
             {
                 new: true,
@@ -386,7 +392,7 @@ exports.updateUserDetails = async(req, res) => {
         console.log(error)
         return wrapFailureResponse(res, 500, `An Error occured: ${error}`)
     }
-    
+
 }
 
 /*

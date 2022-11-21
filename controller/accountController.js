@@ -106,67 +106,13 @@ exports.withdrawCash = async (req, res)=>{
 
     if (user == null)
         return wrapFailureResponse(res, 404, "User not found", null)
-
-    // generate code  hash code 
-    const code = GenerateOTP()
-    console.log(code)
-    const codeHash = bcrypt.hashSync(`${code}`, bcrypt.genSaltSync(10))
-    const storageKey = `${user._id}_OTP`
-
-
-    const expiryDate = getMinutes(5)
-    const otpStorageObject = {
-        code: codeHash,
-        expire_at: expiryDate
-    }
-
-    await client.set(storageKey, JSON.stringify(otpStorageObject))
-
-    // TODO(send SMS to user with the otp)
-    SendSms(`+${msisdn}`, `Your one time password for chop money is ${code}. This is to confirm that you want to make a withdrawal.`)
+    
+    // accepting the user's password to confirm withdrawal
+    
 
     wrapSuccessResponse(res, 200, null, null, token)
 }
 
-exports.confirmCashWithdrawalOTP = async(req, res)=>{
-    const {user, token} = res.locals.user_info
-
-    if (user == null)
-        return wrapFailureResponse(res, 404, "User not found", null)
-    
-    const request = req.body
-
-    // get the otp from the cached data
-    const storageKey = `${user._id}_OTP`
-    const value = await client.get(storageKey)
-    const data = JSON.parse(value)
-    if (data == null && user.isOtpConfirmed)
-        return wrapSuccessResponse(res, 200, "You have already confirmed the OTP", null)
-
-    if (data == null && !user.isOtpConfirmed)
-        return wrapFailureResponse(res, 500, "Please try signing up first", null)
-
-    // checking for the expire by comparison
-    const currentDateTime = new Date()
-    if (currentDateTime > new Date(data.expire_at))
-        return wrapFailureResponse(res, 500, "The OTP has expired, please resend OTP")
-
-    // comparing the hashed OTP and the code
-    const otpCodeComparison = bcrypt.compareSync(request.code, data.code)
-    if (!otpCodeComparison)
-        return wrapFailureResponse(res, 500, "OTPs do not match, please try again")
-
-    // deleting the cached data
-    client.del(storageKey)
-
-    // get the amount to be removed from the transaction table based on the transaction ID
-    const transaction = await Transaction.findById({_id: request.id}).exec()
-
-    // this should trigger the money removal 
-
-    // if successful it should update the user's transaction with a success status else a failure
-
-}
 
 function transactionObject(arr, payTime, duration, transAmount, extra, accID){
     const transactionAccountArray = []    
