@@ -71,7 +71,7 @@ function isUserAuthenticated(client){
             accessToken == token ? accessToken = "": accessToken
 
             // use the id in the payload to get the user data 
-            const user = await User.findOne({ _id: payload._id }).exec()
+            const user = await User.findOne({ _id: payload._id }).populate("accounts").exec()
             const user_info = {user: user, token: accessToken}
             res.locals.user_info = user_info
 
