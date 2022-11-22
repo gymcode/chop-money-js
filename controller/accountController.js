@@ -51,9 +51,8 @@ exports.createAccount = async(req, res)=>{
         if (err) return wrapFailureResponse(res, 500, "Could not insert", null)
 
         // update the user data with the account details
-        const userData = await User.findById({_id: user._id}).exec() 
-        userData.accounts.push(results._id)
-        userData.save()
+        user.accounts.push(results._id)
+        user.save()
 
         // get the difference between the dates  
         const days = diff_Days_Weeks(request.startDate, endDate)
@@ -95,8 +94,11 @@ exports.createAccount = async(req, res)=>{
         }
 
         Transaction.insertMany(objectArr)
-            .then(function(){
-                console.log("inserted")
+            .then(function(data){
+                
+                data.map(({_id})=>{
+                    results.transactions.push(_id)
+                })
                 wrapSuccessResponse(res, 200, results, null, token)
             })
             .catch(function(err){
@@ -120,7 +122,7 @@ exports.withdrawCash = async (req, res)=>{
 
 exports.getAccount = async (req, res) =>{
     const params = req.params
-    console.log(params)
+
     const {user, token} = res.locals.user_info
 
     if (user == null)
