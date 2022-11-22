@@ -54,7 +54,7 @@ exports.createAccount = async(req, res)=>{
         const userData = await User.findById({_id: user._id}).exec() 
         userData.accounts.push(results._id)
         userData.save()
-        
+
         // get the difference between the dates  
         const days = diff_Days_Weeks(request.startDate, endDate)
         const weeks = diff_Days_Weeks(request.startDate, endDate, 7)
@@ -119,15 +119,15 @@ exports.withdrawCash = async (req, res)=>{
 }
 
 exports.getAccount = async (req, res) =>{
-    const accountID = req.params
-    
+    const params = req.params
+    console.log(params)
     const {user, token} = res.locals.user_info
 
     if (user == null)
         return wrapFailureResponse(res, 404, "User not found", null)
 
     // getting the account details where the ID is equal to the ID of the account in the database
-    const account = Account.findOne({_id: accountID}).exec()
+    const account = await Account.findById({_id: params.accountId}).exec()
     if (account == null) return wrapFailureResponse(res, 404, "Account cannot be found")
 
     wrapSuccessResponse(res, 200, account, null, token)
