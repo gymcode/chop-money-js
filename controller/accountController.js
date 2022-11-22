@@ -1,6 +1,6 @@
 const Account = require("../models/Account")
 const Transaction = require("../models/Transaction")
-const SendSms = require("../config/sms")
+const User = require("../models/User")
 const { wrapFailureResponse, wrapSuccessResponse } = require("../shared/response")
 const {
     diff_Days_Weeks, 
@@ -47,9 +47,14 @@ exports.createAccount = async(req, res)=>{
         totalPayAmount: request.totalPayAmount,
     })
 
-    accountInput.save(function (err, results){
+    accountInput.save(async function (err, results){
         if (err) return wrapFailureResponse(res, 500, "Could not insert", null)
 
+        // update the user data with the account details
+        const userData = await User.findById({_id: user._id}).exec() 
+        userData.accounts.push(results._id)
+        userData.save()
+        
         // get the difference between the dates  
         const days = diff_Days_Weeks(request.startDate, endDate)
         const weeks = diff_Days_Weeks(request.startDate, endDate, 7)
@@ -108,9 +113,25 @@ exports.withdrawCash = async (req, res)=>{
         return wrapFailureResponse(res, 404, "User not found", null)
     
     // accepting the user's password to confirm withdrawal
-    
+
 
     wrapSuccessResponse(res, 200, null, null, token)
+}
+
+exports.getAccount = async (req, res) =>{
+    const accountID = req.params
+    
+    const {user, token} = res.locals.user_info
+
+    if (user == null)
+        return wrapFailureResponse(res, 404, "User not found", null)
+
+    // getting the account details where the ID is equal to the ID of the account in the database
+    const account = Account.findOne({_id: accountID}).exec()
+    if (account == null) return wrapFailureResponse(res, 404, "Account cannot be found")
+
+    wrapSuccessResponse(res, 200, account, null, token)
+
 }
 
 
