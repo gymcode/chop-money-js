@@ -305,7 +305,7 @@ exports.userLogin = async (req, res) => {
 
         const msisdn = msg
         // getting the user details based on the msisdn
-        const user = await User.findOne({ msisdn: msisdn }).exec()
+        const user = await User.findOne({ msisdn: msisdn }).populate("accounts").exec()
         console.log(user)
         if (user == null)
             return wrapFailureResponse(res, 404, "You do not have an account, please consider siging up", null)
