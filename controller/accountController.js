@@ -47,64 +47,63 @@ exports.createAccount = async(req, res)=>{
         totalPayAmount: request.totalPayAmount,
     })
 
-    accountInput.save(async function (err, results){
-        if (err) return wrapFailureResponse(res, 500, "Could not insert", null)
+    const accountResponse = await accountInput.save()
+    
+    if (accountResponse == null) return wrapFailureResponse(res, 500, "Could not insert", null)
 
-        // update the user data with the account details
-        user.accounts.push(results._id)
-        user.save()
+    // update the user data with the account details
+    user.accounts.push(accountResponse._id)
+    user.save()
 
-        // get the difference between the dates  
-        const days = diff_Days_Weeks(request.startDate, endDate)
-        const weeks = diff_Days_Weeks(request.startDate, endDate, 7)
-        const biWeeks = diff_Days_Weeks(request.startDate, endDate, 14)
+    // get the difference between the dates  
+    const days = diff_Days_Weeks(request.startDate, endDate)
+    const weeks = diff_Days_Weeks(request.startDate, endDate, 7)
+    const biWeeks = diff_Days_Weeks(request.startDate, endDate, 14)
 
-        let objectArr = [];
-        switch (request.payFrequency) {
-            case 'DAILY'.toUpperCase():
-                objectArr = transactionObject(
-                    request.customizedArray,
-                    request.payTime, 
-                    days, 
-                    request.payFrequencyAmount, 
-                    1, accountInput._id)
-                break;
-        
-            case 'WEEKLY'.toUpperCase(): 
-                objectArr = transactionObject(
-                    request.customizedArray,
-                    request.payTime, 
-                    weeks, 
-                    request.payFrequencyAmount, 
-                    7, accountInput._id)
-                break;
+    let objectArr = [];
+    switch (request.payFrequency) {
+        case 'DAILY'.toUpperCase():
+            objectArr = transactionObject(
+                request.customizedArray,
+                request.payTime, 
+                days, 
+                request.payFrequencyAmount, 
+                1, accountInput._id)
+            break;
+    
+        case 'WEEKLY'.toUpperCase(): 
+            objectArr = transactionObject(
+                request.customizedArray,
+                request.payTime, 
+                weeks, 
+                request.payFrequencyAmount, 
+                7, accountInput._id)
+            break;
 
-            case 'BI-WEEKLY'.toUpperCase(): 
-                objectArr = transactionObject(
-                    request.customizedArray,
-                    request.payTime, 
-                    biWeeks, 
-                    request.payFrequencyAmount, 
-                    14, accountInput._id)
-                break;
+        case 'BI-WEEKLY'.toUpperCase(): 
+            objectArr = transactionObject(
+                request.customizedArray,
+                request.payTime, 
+                biWeeks, 
+                request.payFrequencyAmount, 
+                14, accountInput._id)
+            break;
 
-            default:
-                console.log("it got here")
-                break;
-        }
+        default:
+            console.log("it got here")
+            break;
+    }
 
-        Transaction.insertMany(objectArr)
-            .then(function(data){
-                
-                data.map(({_id})=>{
-                    results.transactions.push(_id)
-                })
-                wrapSuccessResponse(res, 200, results, null, token)
+    Transaction.insertMany(objectArr)
+        .then(function(data){
+            data.map(({_id})=>{
+                accountResponse.transactions.push(_id)
             })
-            .catch(function(err){
-                console.error("an error occured", err)
-            })
-    })
+            wrapSuccessResponse(res, 200, accountResponse, null, token)
+        })
+        .catch(function(err){
+            console.error("an error occured", err)
+        })
 
 }
 
