@@ -23,7 +23,7 @@ exports.createAccount = async(req, res)=>{
     let beneficiaryContact = ""
     // check the status of is beneficiary 
     if (request.isBeneficiary) {
-        const { error, msg } = CountryMsisdnValidation(request.msisdn, request.countryCode)
+        const { error, msg } = CountryMsisdnValidation(request.beneficiaryContact, request.countryCode)
         if (error) return wrapFailureResponse(res, 422, msg, null)
         beneficiaryContact = msg
     }
@@ -96,9 +96,9 @@ exports.createAccount = async(req, res)=>{
 
     Transaction.insertMany(objectArr)
         .then(function(data){
-            data.map(({_id})=>{
-                accountResponse.transactions.push(_id)
-            })
+            // data.map(({_id})=>{
+            //     accountResponse.transactions.push(_id)
+            // })
             wrapSuccessResponse(res, 200, accountResponse, null, token)
         })
         .catch(function(err){
