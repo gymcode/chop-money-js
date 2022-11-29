@@ -112,6 +112,7 @@ exports.createAccount = async(req, res)=>{
     }
 }
 
+// trail 
 exports.withdrawCash = async (req, res)=>{
     const {user, token} = res.locals.user_info
 
