@@ -3,7 +3,7 @@ const {Schema} = mongoose
 
 const accountSchema = new Schema({
     chopMoneyOwner: {type: String, enum: ["MYSELF", "OTHERS"]},
-    isBeneficiary: {type: String, default: false},
+    isBeneficiary: {type: Boolean, default: false},
     beneficiaryContact: {type: String},
     beneficiaryName: String,
     ownerContact: String,
