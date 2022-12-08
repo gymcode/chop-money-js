@@ -97,10 +97,20 @@ exports.createAccount = async(req, res)=>{
         }
     
         Transaction.insertMany(objectArr)
-            .then(function(data){
+            .then(async function(data){
                 // data.map(({_id})=>{
                 //     accountResponse.transactions.push(_id)
                 // })
+                const paymentObject = {
+                    "account": accountResponse.totalPayAmount,
+                    "tot_amnt": accountResponse.totalPayAmount,
+                    "provider": "mtn",
+                    "channel": "mobile_money",
+                    "senderEmail": "",
+                    "description": "test payment",
+                    "foreignID": user._id
+                }
+                await JuniPayPayment(paymentObject)
                 wrapSuccessResponse(res, 200, accountResponse, null, token)
             })
             .catch(function(err){
