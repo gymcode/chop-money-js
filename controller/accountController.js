@@ -47,6 +47,7 @@ exports.createAccount = async(req, res)=>{
             endDate: endDate,
             payTime: request.payTime,
             totalPayAmount: request.totalPayAmount,
+            user: user._id
         })
     
         const accountResponse = await accountInput.save()
@@ -98,19 +99,19 @@ exports.createAccount = async(req, res)=>{
     
         Transaction.insertMany(objectArr)
             .then(async function(data){
-                // data.map(({_id})=>{
-                //     accountResponse.transactions.push(_id)
-                // })
-                const paymentObject = {
-                    "account": accountResponse.totalPayAmount,
-                    "tot_amnt": accountResponse.totalPayAmount,
-                    "provider": "mtn",
-                    "channel": "mobile_money",
-                    "senderEmail": "",
-                    "description": "test payment",
-                    "foreignID": user._id
-                }
-                await JuniPayPayment(paymentObject)
+                data.map(({_id})=>{
+                    accountResponse.transactions.push(_id)
+                })
+                // const paymentObject = {
+                //     "account": accountResponse.totalPayAmount,
+                //     "tot_amnt": accountResponse.totalPayAmount,
+                //     "provider": "mtn",
+                //     "channel": "mobile_money",
+                //     "senderEmail": "",
+                //     "description": "test payment",
+                //     "foreignID": user._id
+                // }
+                // await JuniPayPayment(paymentObject)
                 wrapSuccessResponse(res, 200, accountResponse, null, token)
             })
             .catch(function(err){
@@ -149,6 +150,19 @@ exports.getAccount = async (req, res) =>{
 
     wrapSuccessResponse(res, 200, account, null, token)
 
+}
+
+exports.getAccountsPerUser = async (req,res)=>{
+    const {user, token} = res.locals.user_info
+
+    if (user == null)
+        return wrapFailureResponse(res, 404, "User not found", null)
+
+    // getting the account details where the ID is equal to the ID of the account in the database
+    const account = await Account.find({ user: user._id}).populate('transactions').exec()
+    if (account == null) return wrapFailureResponse(res, 404, "Account cannot be found")
+
+    wrapSuccessResponse(res, 200, account, null, token)
 }
 
 

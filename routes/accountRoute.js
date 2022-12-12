@@ -11,6 +11,8 @@ router.get("/withdraw", isUserAuthenticated(client), accountController.withdrawC
 
 router.get("/:accountId", isUserAuthenticated(client), accountController.getAccount)
 
+router.get("/user-accounts", isUserAuthenticated(client), accountController.getAccountsPerUser)
+
 // router.put("/:accountId", isUserAuthenticated(client), accountController.updateAccount)
 
 // router.delete("/:accountId", isUserAuthenticated(client), accountController.deleteUserAccount)
