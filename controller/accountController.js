@@ -102,6 +102,7 @@ exports.createAccount = async(req, res)=>{
                 data.map(({_id})=>{
                     accountResponse.transactions.push(_id)
                 })
+                accountResponse.save()
                 // const paymentObject = {
                 //     "account": accountResponse.totalPayAmount,
                 //     "tot_amnt": accountResponse.totalPayAmount,
@@ -152,8 +153,9 @@ exports.getAccount = async (req, res) =>{
 
 }
 
-exports.getAccountsPerUser = async (req,res)=>{
+exports.getAccountsPerUser = async (req, res)=>{
     const {user, token} = res.locals.user_info
+    console.log(`here we have the user details ${user}`)
 
     if (user == null)
         return wrapFailureResponse(res, 404, "User not found", null)

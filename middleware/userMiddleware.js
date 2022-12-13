@@ -29,7 +29,7 @@ function isUserAuthenticated(client){
             if (!authHeader.startsWith("Bearer")) return wrapFailureResponse(res, 400, "Authorization header must start with /Bearer /", null)
 
             const token = authHeader.substring(7)
-            console.log(token)
+            
             let accessToken = token
             const data = verifySignedJwtWebToken(token, process.env.ACCESS_TOKEN_SECRET)
 
@@ -40,7 +40,7 @@ function isUserAuthenticated(client){
             // check for the active status of the token
             
             const value = await client.get(token)
-            console.log(value)
+        
             if(value == null || !JSON.parse(value).active) return wrapFailureResponse(res, 400, "Un-authorized access. Try logging in ", null)
 
             // checking if the token has expired 

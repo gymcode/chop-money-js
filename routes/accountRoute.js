@@ -9,7 +9,7 @@ router.post("/activate-account",  isUserAuthenticated(client), accountController
 
 router.get("/withdraw", isUserAuthenticated(client), accountController.withdrawCash)
 
-router.get("/:accountId", isUserAuthenticated(client), accountController.getAccount)
+router.get("/user/:accountId", isUserAuthenticated(client), accountController.getAccount)
 
 router.get("/user-accounts", isUserAuthenticated(client), accountController.getAccountsPerUser)
 
