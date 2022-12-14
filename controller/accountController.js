@@ -168,6 +168,7 @@ exports.getAccountsPerUser = async (req, res)=>{
 }
 
 
+// function 
 function transactionObject(arr, payTime, duration, transAmount, extra, accID){
     const transactionAccountArray = []    
 
