@@ -15,6 +15,5 @@ router.get("/user-accounts", isUserAuthenticated(client), accountController.getA
 
 // router.put("/:accountId", isUserAuthenticated(client), accountController.updateAccount)
 
-// router.delete("/:accountId", isUserAuthenticated(client), accountController.deleteUserAccount)
 
 module.exports = router
