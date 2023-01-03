@@ -1,4 +1,15 @@
 const axios = require("axios")
+const jwt = require("jsonwebtoken")
+const path = require('path')
+const fs = require("fs")
+
+function tokenGeneration(){
+    // get private key from file 
+    const privateKeyFileName = "junipay_privatekey.key"
+    const currentPath = __dirname
+    const privateKey = fs.readFileSync("/", 'utf8')
+    console.log(privateKey)
+}
 
 async function JuniPayPayment(data){
     try {
