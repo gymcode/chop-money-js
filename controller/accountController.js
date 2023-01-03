@@ -146,7 +146,7 @@ exports.getAccount = async (req, res) =>{
         return wrapFailureResponse(res, 404, "User not found", null)
 
     // getting the account details where the ID is equal to the ID of the account in the database
-    const account = await Account.findById({_id: params.accountId}).exec()
+    const account = await Account.findById({_id: params.accountId}).populate('transactions').exec()
     if (account == null) return wrapFailureResponse(res, 404, "Account cannot be found")
 
     wrapSuccessResponse(res, 200, account, null, token)
