@@ -4,7 +4,6 @@ const {config} = require("dotenv")
 const {BASE_URL} = require("./shared/constants")
 const cron = require('node-cron');
 const CronNotificatioController = require("./controller/notificationCronController")
-const fs = require("fs")
 config()
 
 const port = process.env.PORT || "8080"
@@ -13,16 +12,9 @@ const app = express()
 app.use(express.json())
 
 
-
-const privateKeyFileName = "junipay_privatekey.key"
-const currentPath = __dirname
-console.log(currentPath)
-// const privateKey = fs.readFileSync("/", 'utf8')
-
-
 //routesconfig()
 const userRoutes = require("./routes/userRoute")
-const accountRoutes = require("./routes/accountRoute")
+const accountRoutes = require("./routes/accountRoute");
 
 // all user routes
 app.use(`${BASE_URL}/user`, userRoutes)
