@@ -13,6 +13,8 @@ router.get("/user/:accountId", isUserAuthenticated(client), accountController.ge
 
 router.get("/user-accounts", isUserAuthenticated(client), accountController.getAccountsPerUser)
 
+router.get("/make-payment", isUserAuthenticated(client), accountController.makePayment)
+
 // router.put("/:accountId", isUserAuthenticated(client), accountController.updateAccount)
 
 

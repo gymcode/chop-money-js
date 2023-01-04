@@ -43,3 +43,6 @@ async function JuniPayPayment(data) {
     console.error(error);
   }
 }
+
+
+module.exports = JuniPayPayment
