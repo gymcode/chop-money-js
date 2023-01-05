@@ -13,7 +13,7 @@ function tokenGeneration(payload) {
 
   var token;
   try {
-    token = jwt.sign({ payload: "payload_example" }, privateKey, {
+    token = jwt.sign({ payload: "payload_example" }, "privateKey", {
         algorithm: "RS256",
     });
   } catch (err) {
@@ -26,6 +26,8 @@ async function JuniPayPayment(data) {
   try {
     // get token 
     const token = tokenGeneration(data)
+    console.log(`token generated ${token}`)
+
     const clientID = process.env.JUNI_PAY_CLIENT_ID;
     const paymentUri = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
 
@@ -38,7 +40,7 @@ async function JuniPayPayment(data) {
     const response = await axios.post(paymentUri, data, {
       headers: headers,
     });
-    console.log(response.data);
+    console.log(`response data received ${response.data}`);
   } catch (error) {
     console.error(error);
   }
