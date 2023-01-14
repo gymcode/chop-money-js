@@ -138,18 +138,43 @@ exports.makePayment = async (req, res) => {
     const paymentObject = {
       amount: request.totalPayAmount,
       tot_amnt: request.totalPayAmount,
-      provider: "mtn",
-      phoneNumber: "0555190488",
+      provider: request.provider,
+      phoneNumber: user.msisdn,
       channel: "mobile_money",
-      senderEmail: "kyleabs20@gmail.com",
+      senderEmail: "",
       description: "test payment",
-      foreignID: "162131155341745",
+      foreignID: `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
       callbackUrl: "http://localhost:5000/api/v1/account/callback/response"
     };
     
     const paymentResponse = await JuniPayPayment(paymentObject)
 
     return wrapSuccessResponse(res, 200, paymentResponse.data, null, token);
+}
+
+exports.disburseMoney = async (req, res) => {
+  const {user, token} = res.locals.user_info
+
+  if (user == null)
+  return wrapFailureResponse(res, 404, "User not found", null);
+
+  const request = req.body
+
+  const paymentObject = {
+    amount: request.totalPayAmount,
+    tot_amnt: request.totalPayAmount,
+    provider: request.provider,
+    phoneNumber: user.msisdn,
+    channel: "mobile_money",
+    senderEmail: "",
+    description: "test payment",
+    foreignID: `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
+    callbackUrl: "http://localhost:5000/api/v1/account/callback/response"
+  };
+  
+  const paymentResponse = await JuniPayPayment(paymentObject)
+
+  return wrapSuccessResponse(res, 200, paymentResponse.data, null, token);
 }
 
 
