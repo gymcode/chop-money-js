@@ -13,7 +13,9 @@ router.get("/user/:accountId", isUserAuthenticated(client), accountController.ge
 
 router.get("/user-accounts", isUserAuthenticated(client), accountController.getAccountsPerUser)
 
-router.get("/make-payment", isUserAuthenticated(client), accountController.makePayment)
+router.post("/make-payment", isUserAuthenticated(client), accountController.makePayment)
+
+router.post("/disburse-payment", isUserAuthenticated(client), accountController.disburseMoney)
 
 router.post("/callback/response", accountController.paymentResponse)
 

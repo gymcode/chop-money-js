@@ -13,6 +13,9 @@ const {
 const Generate = require("../utils/generateRandomID");
 const JuniPayPayment = require("../config/juniPay");
 
+const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
+const disbursementUrl = process.env.JUNI_PAY_DISBURSEMENT_ENDPOINT;
+
 /*
 creating an account
 */
@@ -147,7 +150,7 @@ exports.makePayment = async (req, res) => {
       callbackUrl: "http://localhost:5000/api/v1/account/callback/response"
     };
     
-    const paymentResponse = await JuniPayPayment(paymentObject)
+    const paymentResponse = await JuniPayPayment(paymentObject, paymentUrl)
 
     return wrapSuccessResponse(res, 200, paymentResponse.data, null, token);
 }
@@ -162,17 +165,18 @@ exports.disburseMoney = async (req, res) => {
 
   const paymentObject = {
     amount: request.totalPayAmount,
-    tot_amnt: request.totalPayAmount,
     provider: request.provider,
-    phoneNumber: user.msisdn,
+    phoneNumber: process.env.JUNI_PAY_SENDER_MSISDN,
+    receiver_phone: "0268211334",
     channel: "mobile_money",
-    senderEmail: "",
-    description: "test payment",
+    sender: process.env.JUNI_PAY_SENDER_NAME,
+    receiver: user.firstName,
+    narration: "payment disbursement",
     foreignID: `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
     callbackUrl: "http://localhost:5000/api/v1/account/callback/response"
   };
   
-  const paymentResponse = await JuniPayPayment(paymentObject)
+  const paymentResponse = await JuniPayPayment(paymentObject, disbursementUrl)
 
   return wrapSuccessResponse(res, 200, paymentResponse.data, null, token);
 }

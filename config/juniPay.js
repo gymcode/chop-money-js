@@ -22,13 +22,12 @@ function tokenGeneration(payload) {
   return token
 }
 
-async function JuniPayPayment(data) {
+async function JuniPayPayment(data, uri) {
   try {
     // get token 
     const token = tokenGeneration(data)
 
     const clientID = process.env.JUNI_PAY_CLIENT_ID;
-    const paymentUri = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
 
     const headers = {
       authorization: `Bearer ${token.trim()}`,
@@ -36,7 +35,7 @@ async function JuniPayPayment(data) {
       "content-type": "application/json",
     };
 
-    const response = await axios.post(paymentUri, data, {
+    const response = await axios.post(uri, data, {
       headers: headers,
     });
 
