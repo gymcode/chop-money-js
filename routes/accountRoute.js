@@ -15,7 +15,7 @@ router.get("/user-accounts", isUserAuthenticated(client), accountController.getA
 
 router.get("/make-payment", isUserAuthenticated(client), accountController.makePayment)
 
-// router.put("/:accountId", isUserAuthenticated(client), accountController.updateAccount)
+router.post("/callback/response", accountController.paymentResponse)
 
 
 module.exports = router

@@ -136,19 +136,27 @@ exports.makePayment = async (req, res) => {
     const request = req.body
 
     const paymentObject = {
-      account: request.totalPayAmount,
+      amount: request.totalPayAmount,
       tot_amnt: request.totalPayAmount,
-      provider: request.network,
+      provider: "mtn",
+      phoneNumber: "0555190488",
       channel: "mobile_money",
-      senderEmail: "",
+      senderEmail: "kyleabs20@gmail.com",
       description: "test payment",
-      foreignID: user._id,
-      callbackUrl: ""
+      foreignID: "162131155341745",
+      callbackUrl: "http://localhost:5000/api/v1/account/callback/response"
     };
     
     const paymentResponse = await JuniPayPayment(paymentObject)
-    console.log(paymentResponse)
-    return wrapSuccessResponse(res, 200, paymentResponse, null, token);
+
+    return wrapSuccessResponse(res, 200, paymentResponse.data, null, token);
+}
+
+
+exports.paymentResponse = async (req, res) => {
+    
+    console.log(req.body)
+    res.status(200).end()
 }
 
 // trail
