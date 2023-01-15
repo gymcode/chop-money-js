@@ -35,6 +35,8 @@ async function JuniPayPayment(data, uri) {
       "content-type": "application/json",
     };
 
+    console.log(data, uri)
+
     const response = await axios.post(uri, data, {
       headers: headers,
     });

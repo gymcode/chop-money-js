@@ -147,7 +147,7 @@ exports.makePayment = async (req, res) => {
       senderEmail: "",
       description: "test payment",
       foreignID: `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
-      callbackUrl: "http://localhost:5000/api/v1/account/callback/response"
+      callbackUrl: "https://chop-money.fly.dev/api/v1/account/callback/response"
     };
     
     const paymentResponse = await JuniPayPayment(paymentObject, paymentUrl)
@@ -170,10 +170,10 @@ exports.disburseMoney = async (req, res) => {
     receiver_phone: "0268211334",
     channel: "mobile_money",
     sender: process.env.JUNI_PAY_SENDER_NAME,
-    receiver: user.firstName,
+    receiver: user.username,
     narration: "payment disbursement",
     foreignID: `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
-    callbackUrl: "http://localhost:5000/api/v1/account/callback/response"
+    callbackUrl: "https://chop-money.fly.dev/api/v1/account/callback/response"
   };
   
   const paymentResponse = await JuniPayPayment(paymentObject, disbursementUrl)
