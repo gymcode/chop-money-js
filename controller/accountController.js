@@ -138,6 +138,8 @@ exports.makePayment = async (req, res) => {
 
     const request = req.body
 
+    const 
+
     const paymentObject = {
       amount: request.totalPayAmount,
       tot_amnt: request.totalPayAmount,
