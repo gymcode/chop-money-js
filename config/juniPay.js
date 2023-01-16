@@ -26,7 +26,7 @@ async function JuniPayPayment(data, uri) {
   try {
     // get token 
     const token = tokenGeneration(data)
-
+    console.log(token)
     const clientID = process.env.JUNI_PAY_CLIENT_ID;
 
     const headers = {

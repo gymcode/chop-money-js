@@ -142,9 +142,9 @@ exports.makePayment = async (req, res) => {
       amount: request.totalPayAmount,
       tot_amnt: request.totalPayAmount,
       provider: request.provider,
-      phoneNumber: user.msisdn,
+      phoneNumber: "026211334",
       channel: "mobile_money",
-      senderEmail: "",
+      senderEmail: "kyleabs20@gmail.com",
       description: "test payment",
       foreignID: `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
       callbackUrl: "https://chop-money.fly.dev/api/v1/account/callback/response"
