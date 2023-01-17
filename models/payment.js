@@ -4,8 +4,8 @@ const {Schema} = mongoose
 const paymentSchema = new Schema({
     transactionId: String,
     accountType: {type: String, default: "MOMO_WALLET"},
-    paymentRequest: Object,
-    paymentResponse: Object,
+    paymentRequest: String,
+    paymentResponse: String,
     amount: Number,
     user: {type: Schema.Types.ObjectId, ref: 'users'},
     transaction: {type: Schema.Types.ObjectId, ref: 'transactions'},

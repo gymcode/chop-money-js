@@ -164,13 +164,13 @@ exports.makePayment = async (req, res) => {
 
     const paymentAudit = new Payment({
       transactionId: transactionId,
-      paymentRequest: paymentRequest,
-      paymentResponse: paymentResponse,
+      paymentRequest: JSON.stringify(paymentRequest),
+      paymentResponse: JSON.stringify(paymentResponse.response.data),
       amount: request.totalPayAmount,
       user: user._id,
       transaction: request.transactionId,
     });
-    await paymentAudit.save(paymentAudit);
+    paymentAudit.save(paymentAudit);
 
     return wrapSuccessResponse(res, 200, paymentResponse.response.data, null, token);
   } catch (error) {
@@ -190,6 +190,7 @@ exports.disburseMoney = async (req, res) => {
 
     // get the trasaction and check if it's active and has not been paid 
     const transaction = await Transaction.findById({ _id: request.transactionId }).exec();
+    console.log(transaction)
 
     if (!transaction.isActive) throw new Error("Transaction amount has already been paid to this number.")
 
@@ -217,13 +218,13 @@ exports.disburseMoney = async (req, res) => {
       disbursementUrl
     );
 
-    if (paymentResponse != "00")
+    if (paymentResponse.code != "00")
       throw new Error(paymentResponse.response.message);
 
     const paymentAudit = new Payment({
       transactionId: transactionId,
-      paymentRequest: paymentRequest,
-      paymentResponse: paymentResponse,
+      paymentRequest: JSON.stringify(paymentRequest),
+      paymentResponse: JSON.stringify(paymentResponse.response.data),
       amount: request.totalPayAmount,
       user: user._id,
       transaction: request.transactionId,
