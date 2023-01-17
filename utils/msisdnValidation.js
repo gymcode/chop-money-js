@@ -10,7 +10,7 @@ function Gh_MsisdnValidation(msisdn) {
     if (msisdn.length < 9) return { error: true, msg: GH_NUMBER_LENGTH_NINE };
 
     switch (true) {
-      case msisdn.startsWith(0) && msisdn.length == 10:
+      case msisdn.startsWith("0") && msisdn.length == 10:
         Object.assign(response, {
           error: false,
           msg: ISO_CODE + msisdn.substring(1),

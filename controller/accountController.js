@@ -46,7 +46,10 @@ exports.createAccount = async (req, res) => {
       beneficiaryCheckUrl.searchParams.set("provider", request.provider);
       beneficiaryCheckUrl.searchParams.set("phoneNumber", beneficiaryContact);
 
-      const response = await JuniPayPayment({}, beneficiaryCheckUrl);
+      console.log(beneficiaryCheckUrl.href)
+
+      const response = await JuniPayPayment({}, beneficiaryCheckUrl.href, "GET");
+      console.log(response)
 
       if (response.code != "00")
         throw new Error(response.response.message);
@@ -210,7 +213,23 @@ exports.disburseMoney = async (req, res) => {
     const transaction = await Transaction.findById({
       _id: request.transactionId,
     }).exec();
-    console.log(transaction);
+
+    // chech if the account is for a beneficiary or main user
+    const account = await Account.findById({
+      _id: transaction.account
+    })
+
+    if (account == null) throw new Error("Account does not exist")
+
+    let receiver_phone = ""
+    let receiver = ""
+    if (account.isBeneficiary){
+      receiver = account.beneficiaryName
+      receiver_phone = account.beneficiaryContact
+    }else{
+      receiver = user.username
+      receiver_phone =  user.msisdn
+    }
 
     if (!transaction.isActive)
       throw new Error(
@@ -226,19 +245,21 @@ exports.disburseMoney = async (req, res) => {
       1000000000000 + Math.random() * 9000000000000
     );
 
-    const paymentObject = {
+    const paymentRequest = {
       amount: transaction.transactionAmount,
       provider: request.provider,
       phoneNumber: process.env.JUNI_PAY_SENDER_MSISDN,
-      receiver_phone: user.msisdn,
+      receiver_phone: receiver_phone,
       channel: "mobile_money",
       sender: process.env.JUNI_PAY_SENDER_NAME,
-      receiver: user.username,
+      receiver: receiver,
       narration: "payment disbursement",
       foreignID: transactionId.toString(),
       callbackUrl:
         "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
+
+    console.log(paymentObject)
 
     const paymentResponse = await JuniPayPayment(
       paymentObject,

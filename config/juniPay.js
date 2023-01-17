@@ -15,18 +15,18 @@ function tokenGeneration(payload) {
   var token;
   try {
     token = jwt.sign({ payload: payload }, privateKey, {
-        algorithm: "RS256",
+      algorithm: "RS256",
     });
   } catch (err) {
     throw err;
   }
-  return token
+  return token;
 }
 
-async function JuniPayPayment(data, uri) {
+async function JuniPayPayment(data, uri, method = "POST") {
   try {
-    // get token 
-    const token = tokenGeneration(data)
+    // get token
+    const token = tokenGeneration(data);
     const clientID = process.env.JUNI_PAY_CLIENT_ID;
 
     const headers = {
@@ -35,18 +35,25 @@ async function JuniPayPayment(data, uri) {
       "content-type": "application/json",
     };
 
-    console.log(data, uri)
+    console.log(data, uri);
 
-    const response = await axios.post(uri, data, {
-      headers: headers,
-    });
+    let response;
 
-    return {code: "00", response: response}
+    if (method === "POST") {
+      response = await axios.post(uri, data, {
+        headers: headers,
+      });
+    } else {
+      response = await axios.get(uri, {
+        headers: headers,
+      });
+    }
+
+    return { code: "00", response: response };
   } catch (error) {
     console.error(error.response.data.info);
-    return {code: "01", response: error.response.data.info}
+    return { code: "01", response: error.response.data.info };
   }
 }
 
-
-module.exports = JuniPayPayment
+module.exports = JuniPayPayment;
