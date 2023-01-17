@@ -157,7 +157,7 @@ exports.makePayment = async (req, res) => {
     };
 
     const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
-    console.log(paymentResponse)
+    console.log(paymentResponse);
 
     if (paymentResponse.code != "00")
       throw new Error(paymentResponse.response.message);
@@ -172,7 +172,13 @@ exports.makePayment = async (req, res) => {
     });
     paymentAudit.save(paymentAudit);
 
-    return wrapSuccessResponse(res, 200, paymentResponse.response.data, null, token);
+    return wrapSuccessResponse(
+      res,
+      200,
+      paymentResponse.response.data,
+      null,
+      token
+    );
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);
   }
@@ -185,14 +191,22 @@ exports.disburseMoney = async (req, res) => {
     if (user == null)
       return wrapFailureResponse(res, 404, "User not found", null);
 
-
     const request = req.body;
 
-    // get the trasaction and check if it's active and has not been paid 
-    const transaction = await Transaction.findById({ _id: request.transactionId }).exec();
-    console.log(transaction)
+    // get the trasaction and check if it's active and has not been paid
+    const transaction = await Transaction.findById({
+      _id: request.transactionId,
+    }).exec();
+    console.log(transaction);
 
-    if (!transaction.isActive) throw new Error("Transaction amount has already been paid to this number.")
+    if (!transaction.isActive)
+      throw new Error(
+        "Transaction amount has already been paid to this number."
+      );
+
+    // check if the time for the user to redraw money has reached 
+    const currentDate = new Date()
+    if (transaction.date > currentDate) throw new Error("it's not yet time to get your money!!!")
 
     const transactionId = Math.floor(
       1000000000000 + Math.random() * 9000000000000
@@ -211,7 +225,6 @@ exports.disburseMoney = async (req, res) => {
       callbackUrl:
         "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
-    
 
     const paymentResponse = await JuniPayPayment(
       paymentObject,
@@ -231,15 +244,83 @@ exports.disburseMoney = async (req, res) => {
     });
     paymentAudit.save(paymentAudit);
 
-    return wrapSuccessResponse(res, 200, paymentResponse.response.data, null, token);
+    return wrapSuccessResponse(
+      res,
+      200,
+      paymentResponse.response.data,
+      null,
+      token
+    );
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);
   }
 };
 
 exports.paymentResponse = async (req, res) => {
-  console.log(req.body);
-  res.status(200).end();
+  try {
+    console.log(req.body);
+    const request = req.body;
+
+    // get the payment details
+    // update the payment details and get the transactionId and update the transaction using the trasactionId
+    const payment = await Payment.findOne({
+      transactionId: request.foreignID,
+    }).exec();
+
+    if (payment == null)
+      throw new Error(`No transaction found with the ${request.foreighID}`);
+
+    // update the payment details
+    const updatedPaymentDetails = await Payment.updateOne(
+      { _id: payment._id },
+      {
+        update_at: new Date(),
+        statusDescription: "SUCCESS",
+        paymentResponse: JSON.stringify(req.body),
+        isPaymentSuccessful: true,
+      },
+      {
+        new: true,
+        upsert: true,
+        rawResult: true, // Return the raw result from the MongoDB driver
+      }
+    );
+
+    if (!updatedPaymentDetails.value.isPaymentSuccessful)
+      return wrapFailureResponse(
+        res,
+        200,
+        "Could not update payment status",
+        null
+      );
+
+    // update the transaction details
+    const updateTransactionDetails = await Transaction.updateOne(
+      { _id: payment.transaction },
+      {
+        update_at: new Date(),
+        transactionStatus: "COMPLETED",
+        isActive: false,
+      },
+      {
+        new: true,
+        upsert: true,
+        rawResult: true, // Return the raw result from the MongoDB driver
+      }
+    );
+
+    if (updateTransactionDetails.value.isActive)
+      return wrapFailureResponse(
+        res,
+        200,
+        "Could not update isActive status",
+        null
+      );
+
+    return wrapSuccessResponse(res, 200, "success", null);
+  } catch (error) {
+    return wrapFailureResponse(res, 500, error.message, null);
+  }
 };
 
 // trail
