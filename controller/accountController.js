@@ -16,6 +16,7 @@ const JuniPayPayment = require("../config/juniPay");
 
 const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
 const disbursementUrl = process.env.JUNI_PAY_DISBURSEMENT_ENDPOINT;
+const resolveUrl = process.env.JUNI_RESOLVE_ENDPOINT;
 
 /*
 creating an account
@@ -38,7 +39,19 @@ exports.createAccount = async (req, res) => {
       );
       if (error) return wrapFailureResponse(res, 422, msg, null);
       beneficiaryContact = msg;
+
+      // name contact validation
+      const beneficiaryCheckUrl = new URL(resolveUrl);
+      beneficiaryCheckUrl.searchParams.set("channel", "mobile_money");
+      beneficiaryCheckUrl.searchParams.set("provider", request.provider);
+      beneficiaryCheckUrl.searchParams.set("phoneNumber", beneficiaryContact);
+
+      const response = await JuniPayPayment({}, beneficiaryCheckUrl);
+
+      if (response.code != "00")
+        throw new Error(response.response.message);
     }
+
     const numberOfDays = 31;
     const totalHours = numberOfDays * 24;
     let endDate =
@@ -147,7 +160,7 @@ exports.makePayment = async (req, res) => {
       amount: request.totalPayAmount,
       tot_amnt: request.totalPayAmount,
       provider: request.provider,
-      phoneNumber: "0268211334",
+      phoneNumber: user.msisdn,
       channel: "mobile_money",
       senderEmail: "kyleabs20@gmail.com",
       description: "test payment",
@@ -204,9 +217,10 @@ exports.disburseMoney = async (req, res) => {
         "Transaction amount has already been paid to this number."
       );
 
-    // check if the time for the user to redraw money has reached 
-    const currentDate = new Date()
-    if (transaction.date > currentDate) throw new Error("it's not yet time to get your money!!!")
+    // check if the time for the user to redraw money has reached
+    const currentDate = new Date();
+    if (transaction.date > currentDate)
+      throw new Error("it's not yet time to get your money!!!");
 
     const transactionId = Math.floor(
       1000000000000 + Math.random() * 9000000000000
@@ -216,7 +230,7 @@ exports.disburseMoney = async (req, res) => {
       amount: transaction.transactionAmount,
       provider: request.provider,
       phoneNumber: process.env.JUNI_PAY_SENDER_MSISDN,
-      receiver_phone: "0268211334",
+      receiver_phone: user.msisdn,
       channel: "mobile_money",
       sender: process.env.JUNI_PAY_SENDER_NAME,
       receiver: user.username,
