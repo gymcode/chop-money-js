@@ -147,18 +147,19 @@ exports.makePayment = async (req, res) => {
       amount: request.totalPayAmount,
       tot_amnt: request.totalPayAmount,
       provider: request.provider,
-      phoneNumber: "026211334",
+      phoneNumber: "0268211334",
       channel: "mobile_money",
       senderEmail: "kyleabs20@gmail.com",
       description: "test payment",
-      foreignID: transactionId.toString(),
+      foreignID: `${transactionId}`,
       callbackUrl:
         "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
 
     const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
+    console.log(paymentResponse)
 
-    if (paymentResponse != "00")
+    if (paymentResponse.code != "00")
       throw new Error(paymentResponse.response.message);
 
     const paymentAudit = new Payment({
@@ -169,9 +170,9 @@ exports.makePayment = async (req, res) => {
       user: user._id,
       transaction: request.transactionId,
     });
-    paymentAudit.save(paymentAudit);
+    await paymentAudit.save(paymentAudit);
 
-    return wrapSuccessResponse(res, 200, paymentResponse.data, null, token);
+    return wrapSuccessResponse(res, 200, paymentResponse.response.data, null, token);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);
   }
@@ -184,13 +185,20 @@ exports.disburseMoney = async (req, res) => {
     if (user == null)
       return wrapFailureResponse(res, 404, "User not found", null);
 
+
     const request = req.body;
+
+    // get the trasaction and check if it's active and has not been paid 
+    const transaction = await Transaction.findById({ _id: request.transactionId }).exec();
+
+    if (!transaction.isActive) throw new Error("Transaction amount has already been paid to this number.")
+
     const transactionId = Math.floor(
       1000000000000 + Math.random() * 9000000000000
     );
 
     const paymentObject = {
-      amount: request.totalPayAmount,
+      amount: transaction.transactionAmount,
       provider: request.provider,
       phoneNumber: process.env.JUNI_PAY_SENDER_MSISDN,
       receiver_phone: "0268211334",
@@ -222,7 +230,7 @@ exports.disburseMoney = async (req, res) => {
     });
     paymentAudit.save(paymentAudit);
 
-    return wrapSuccessResponse(res, 200, paymentResponse.data, null, token);
+    return wrapSuccessResponse(res, 200, paymentResponse.response.data, null, token);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);
   }
