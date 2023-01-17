@@ -1,6 +1,7 @@
 const Account = require("../models/Account");
 const { CountryMsisdnValidation } = require("../utils/msisdnValidation");
 const Transaction = require("../models/Transaction");
+const Payment = require("../models/payment");
 const {
   wrapFailureResponse,
   wrapSuccessResponse,
@@ -131,16 +132,18 @@ exports.createAccount = async (req, res) => {
 };
 
 exports.makePayment = async (req, res) => {
-    const {user, token} = res.locals.user_info
+  try {
+    const { user, token } = res.locals.user_info;
 
     if (user == null)
-    return wrapFailureResponse(res, 404, "User not found", null);
+      return wrapFailureResponse(res, 404, "User not found", null);
 
-    const request = req.body
+    const request = req.body;
+    const transactionId = Math.floor(
+      1000000000000 + Math.random() * 9000000000000
+    );
 
-    const 
-
-    const paymentObject = {
+    const paymentRequest = {
       amount: request.totalPayAmount,
       tot_amnt: request.totalPayAmount,
       provider: request.provider,
@@ -148,47 +151,87 @@ exports.makePayment = async (req, res) => {
       channel: "mobile_money",
       senderEmail: "kyleabs20@gmail.com",
       description: "test payment",
-      foreignID: `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
-      callbackUrl: "https://chop-money.fly.dev/api/v1/account/callback/response"
+      foreignID: transactionId.toString(),
+      callbackUrl:
+        "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
-    
-    const paymentResponse = await JuniPayPayment(paymentObject, paymentUrl)
+
+    const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
+
+    if (paymentResponse != "00")
+      throw new Error(paymentResponse.response.message);
+
+    const paymentAudit = new Payment({
+      transactionId: transactionId,
+      paymentRequest: paymentRequest,
+      paymentResponse: paymentResponse,
+      amount: request.totalPayAmount,
+      user: user._id,
+      transaction: request.transactionId,
+    });
+    paymentAudit.save(paymentAudit);
 
     return wrapSuccessResponse(res, 200, paymentResponse.data, null, token);
-}
+  } catch (error) {
+    return wrapFailureResponse(res, 500, error.message, error);
+  }
+};
 
 exports.disburseMoney = async (req, res) => {
-  const {user, token} = res.locals.user_info
+  try {
+    const { user, token } = res.locals.user_info;
 
-  if (user == null)
-  return wrapFailureResponse(res, 404, "User not found", null);
+    if (user == null)
+      return wrapFailureResponse(res, 404, "User not found", null);
 
-  const request = req.body
+    const request = req.body;
+    const transactionId = Math.floor(
+      1000000000000 + Math.random() * 9000000000000
+    );
 
-  const paymentObject = {
-    amount: request.totalPayAmount,
-    provider: request.provider,
-    phoneNumber: process.env.JUNI_PAY_SENDER_MSISDN,
-    receiver_phone: "0268211334",
-    channel: "mobile_money",
-    sender: process.env.JUNI_PAY_SENDER_NAME,
-    receiver: user.username,
-    narration: "payment disbursement",
-    foreignID: `${Math.floor(1000000000000 + Math.random() * 9000000000000)}`,
-    callbackUrl: "https://chop-money.fly.dev/api/v1/account/callback/response"
-  };
-  
-  const paymentResponse = await JuniPayPayment(paymentObject, disbursementUrl)
+    const paymentObject = {
+      amount: request.totalPayAmount,
+      provider: request.provider,
+      phoneNumber: process.env.JUNI_PAY_SENDER_MSISDN,
+      receiver_phone: "0268211334",
+      channel: "mobile_money",
+      sender: process.env.JUNI_PAY_SENDER_NAME,
+      receiver: user.username,
+      narration: "payment disbursement",
+      foreignID: transactionId.toString(),
+      callbackUrl:
+        "https://chop-money.fly.dev/api/v1/account/callback/response",
+    };
+    
 
-  return wrapSuccessResponse(res, 200, paymentResponse.data, null, token);
-}
+    const paymentResponse = await JuniPayPayment(
+      paymentObject,
+      disbursementUrl
+    );
 
+    if (paymentResponse != "00")
+      throw new Error(paymentResponse.response.message);
+
+    const paymentAudit = new Payment({
+      transactionId: transactionId,
+      paymentRequest: paymentRequest,
+      paymentResponse: paymentResponse,
+      amount: request.totalPayAmount,
+      user: user._id,
+      transaction: request.transactionId,
+    });
+    paymentAudit.save(paymentAudit);
+
+    return wrapSuccessResponse(res, 200, paymentResponse.data, null, token);
+  } catch (error) {
+    return wrapFailureResponse(res, 500, error.message, error);
+  }
+};
 
 exports.paymentResponse = async (req, res) => {
-    
-    console.log(req.body)
-    res.status(200).end()
-}
+  console.log(req.body);
+  res.status(200).end();
+};
 
 // trail
 exports.withdrawCash = async (req, res) => {

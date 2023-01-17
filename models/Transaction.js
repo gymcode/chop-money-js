@@ -12,6 +12,7 @@ const transactionSchema = new Schema({
         default: "NEW"
     },
     transactionAmount: Number,
+    isActive: {type: Boolean, default: true},
     account: {type: Schema.Types.ObjectId, ref: "accounts"},
     version: {type: Number, default: 1}
 }, {timestamps: true})

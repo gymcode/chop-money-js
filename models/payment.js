@@ -10,7 +10,7 @@ const paymentSchema = new Schema({
     user: {type: Schema.Types.ObjectId, ref: 'users'},
     transaction: {type: Schema.Types.ObjectId, ref: 'transactions'},
     statusDescription: {type: String, default: "PENDING"},
-    isPaymentSuccessful: Boolean,
+    isPaymentSuccessful: {type: Boolean},
     version: {type: Number, default: 1}
 }, {timestamps: true})
 

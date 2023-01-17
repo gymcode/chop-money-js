@@ -2,6 +2,7 @@ const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
+const { wrapFailureResponse } = require("../shared/response");
 
 function tokenGeneration(payload) {
   // get private key from file
@@ -26,7 +27,6 @@ async function JuniPayPayment(data, uri) {
   try {
     // get token 
     const token = tokenGeneration(data)
-    console.log(token)
     const clientID = process.env.JUNI_PAY_CLIENT_ID;
 
     const headers = {
@@ -41,11 +41,10 @@ async function JuniPayPayment(data, uri) {
       headers: headers,
     });
 
-    if (response.status != "200") throw new Error("An Error Occured")
-
-    return response
+    return {code: "00", response: response}
   } catch (error) {
     console.error(error.message);
+    return {code: "01", response: error}
   }
 }
 
