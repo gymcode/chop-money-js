@@ -7,7 +7,6 @@ const {isUserAuthenticated} = require("../middleware/userMiddleware")
 
 router.post("/activate-account",  isUserAuthenticated(client), accountController.createAccount)
 
-router.get("/withdraw", isUserAuthenticated(client), accountController.withdrawCash)
 
 router.get("/user/:accountId", isUserAuthenticated(client), accountController.getAccount)
 

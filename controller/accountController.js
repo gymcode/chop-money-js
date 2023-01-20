@@ -358,39 +358,36 @@ exports.paymentResponse = async (req, res) => {
   }
 };
 
-// trail
-exports.withdrawCash = async (req, res) => {
-  const { user, token } = res.locals.user_info;
-
-  if (user == null)
-    return wrapFailureResponse(res, 404, "User not found", null);
-
-  // accepting the user's password to confirm withdrawal
-
-  wrapSuccessResponse(res, 200, null, null, token);
-};
 
 exports.getAccount = async (req, res) => {
-  const params = req.params;
+  try{
+    const params = req.params;
 
-  const { user, token } = res.locals.user_info;
+    const { user, token } = res.locals.user_info;
+  
+    if (user == null)
+      return wrapFailureResponse(res, 404, "User not found", null);
+  
+    // getting the account details where the ID is equal to the ID of the account in the database
+    const account = await Account.findById({ _id: params.accountId })
+      .populate("transactions")
+      .exec();
+    console.log(account)
 
-  if (user == null)
-    return wrapFailureResponse(res, 404, "User not found", null);
+    if (account == null)
+      return wrapFailureResponse(res, 404, "Account cannot be found");
 
-  // getting the account details where the ID is equal to the ID of the account in the database
-  const account = await Account.findById({ _id: params.accountId })
-    .populate("transactions")
-    .exec();
-  const transactions = account.transactions;
-  if (account == null)
-    return wrapFailureResponse(res, 404, "Account cannot be found");
-
-  wrapSuccessResponse(res, 200, transactions, null, token);
+    const transactions = account.transactions;
+  
+    wrapSuccessResponse(res, 200, transactions, null, token);
+  }catch(error){
+    return wrapFailureResponse(res, 500, error.message, null);
+  }
 };
 
 exports.getAccountsPerUser = async (req, res) => {
-  const { user, token } = res.locals.user_info;
+  try {
+    const { user, token } = res.locals.user_info;
   console.log(`here we have the user details ${user}`);
 
   if (user == null)
@@ -404,6 +401,9 @@ exports.getAccountsPerUser = async (req, res) => {
     return wrapFailureResponse(res, 404, "Account cannot be found");
 
   wrapSuccessResponse(res, 200, account, null, token);
+  } catch (error) {
+    return wrapFailureResponse(res, 500, error.message, null);
+  }
 };
 
 // function

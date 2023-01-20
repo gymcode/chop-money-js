@@ -76,7 +76,7 @@ exports.userRegistration = async (req, res) => {
     // TODO(send SMS to user with the otp)
     NaloSendSms(
       `+${msisdn}`,
-      `Your one time password for chop money is ${code}`
+      `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
     );
     wrapSuccessResponse(res, 200, user);
   } catch (error) {
