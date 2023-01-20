@@ -14,6 +14,7 @@ const User = require("../models/User");
 const generateOtp = require("../utils/generateOtp");
 const _ = require("lodash");
 const { signJwtWebToken } = require("../utils/jwt_helpers");
+const resolveUrl = process.env.JUNI_RESOLVE_ENDPOINT;
 
 /*
 register a new user 
@@ -30,6 +31,16 @@ exports.userRegistration = async (req, res) => {
       return wrapFailureResponse(res, 422, msg, null);
     }
     const msisdn = msg;
+
+    // check if number is valid
+    const nameCheckUrl = new URL(resolveUrl);
+    nameCheckUrl.searchParams.set("channel", "mobile_money");
+    nameCheckUrl.searchParams.set("provider", request.provider);
+    nameCheckUrl.searchParams.set("phoneNumber", msisdn);
+
+    const response = await JuniPayPayment({}, nameCheckUrl.href, "GET");
+
+    if (response.code != "00") throw new Error(response.response.message);
 
     // checking in the database if the user already exists
     let user = await User.findOne({ msisdn: msisdn }).exec();

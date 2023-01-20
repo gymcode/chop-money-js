@@ -46,13 +46,15 @@ exports.createAccount = async (req, res) => {
       beneficiaryCheckUrl.searchParams.set("provider", request.provider);
       beneficiaryCheckUrl.searchParams.set("phoneNumber", beneficiaryContact);
 
-      console.log(beneficiaryCheckUrl.href)
+      console.log(beneficiaryCheckUrl.href);
 
-      const response = await JuniPayPayment({}, beneficiaryCheckUrl.href, "GET");
-      console.log(response)
+      const response = await JuniPayPayment(
+        {},
+        beneficiaryCheckUrl.href,
+        "GET"
+      );
 
-      if (response.code != "00")
-        throw new Error(response.response.message);
+      if (response.code != "00") throw new Error(response.response.message);
     }
 
     const numberOfDays = 31;
@@ -137,68 +139,71 @@ exports.createAccount = async (req, res) => {
           accountResponse.transactions.push(_id);
         });
         accountResponse.save();
-        wrapSuccessResponse(res, 200, accountResponse, null, token);
+
+        // trigger money removal before proceeding with success response
+        const paymentResponse = await makePayment(res, request, user)
+        wrapSuccessResponse(res, 200, paymentResponse, null, token);
       })
       .catch(function (err) {
-        console.error("an error occured", err);
+        return wrapFailureResponse(res, 500, err.message, err);
       });
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);
   }
 };
 
-exports.makePayment = async (req, res) => {
-  try {
-    const { user, token } = res.locals.user_info;
+// exports.makePayment = async (req, res) => {
+//   try {
+//     const { user, token } = res.locals.user_info;
 
-    if (user == null)
-      return wrapFailureResponse(res, 404, "User not found", null);
+//     if (user == null)
+//       return wrapFailureResponse(res, 404, "User not found", null);
 
-    const request = req.body;
-    const transactionId = Math.floor(
-      1000000000000 + Math.random() * 9000000000000
-    );
+//     const request = req.body;
+//     const transactionId = Math.floor(
+//       1000000000000 + Math.random() * 9000000000000
+//     );
 
-    const paymentRequest = {
-      amount: request.totalPayAmount,
-      tot_amnt: request.totalPayAmount,
-      provider: request.provider,
-      phoneNumber: user.msisdn,
-      channel: "mobile_money",
-      senderEmail: "kyleabs20@gmail.com",
-      description: "test payment",
-      foreignID: `${transactionId}`,
-      callbackUrl:
-        "https://chop-money.fly.dev/api/v1/account/callback/response",
-    };
+//     const paymentRequest = {
+//       amount: request.totalPayAmount,
+//       tot_amnt: request.totalPayAmount,
+//       provider: request.provider,
+//       phoneNumber: user.msisdn,
+//       channel: "mobile_money",
+//       senderEmail: "kyleabs20@gmail.com",
+//       description: "test payment",
+//       foreignID: `${transactionId}`,
+//       callbackUrl:
+//         "https://chop-money.fly.dev/api/v1/account/callback/response",
+//     };
 
-    const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
-    console.log(paymentResponse);
+//     const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
+//     console.log(paymentResponse);
 
-    if (paymentResponse.code != "00")
-      throw new Error(paymentResponse.response.message);
+//     if (paymentResponse.code != "00")
+//       throw new Error(paymentResponse.response.message);
 
-    const paymentAudit = new Payment({
-      transactionId: transactionId,
-      paymentRequest: JSON.stringify(paymentRequest),
-      paymentResponse: JSON.stringify(paymentResponse.response.data),
-      amount: request.totalPayAmount,
-      user: user._id,
-      transaction: request.transactionId,
-    });
-    paymentAudit.save(paymentAudit);
+//     const paymentAudit = new Payment({
+//       transactionId: transactionId,
+//       paymentRequest: JSON.stringify(paymentRequest),
+//       paymentResponse: JSON.stringify(paymentResponse.response.data),
+//       amount: request.totalPayAmount,
+//       user: user._id,
+//       transaction: request.transactionId,
+//     });
+//     paymentAudit.save(paymentAudit);
 
-    return wrapSuccessResponse(
-      res,
-      200,
-      paymentResponse.response.data,
-      null,
-      token
-    );
-  } catch (error) {
-    return wrapFailureResponse(res, 500, error.message, error);
-  }
-};
+//     return wrapSuccessResponse(
+//       res,
+//       200,
+//       paymentResponse.response.data,
+//       null,
+//       token
+//     );
+//   } catch (error) {
+//     return wrapFailureResponse(res, 500, error.message, error);
+//   }
+// };
 
 exports.disburseMoney = async (req, res) => {
   try {
@@ -216,19 +221,19 @@ exports.disburseMoney = async (req, res) => {
 
     // chech if the account is for a beneficiary or main user
     const account = await Account.findById({
-      _id: transaction.account
-    })
+      _id: transaction.account,
+    });
 
-    if (account == null) throw new Error("Account does not exist")
+    if (account == null) throw new Error("Account does not exist");
 
-    let receiver_phone = ""
-    let receiver = ""
-    if (account.isBeneficiary){
-      receiver = account.beneficiaryName
-      receiver_phone = account.beneficiaryContact
-    }else{
-      receiver = user.username
-      receiver_phone =  user.msisdn
+    let receiver_phone = "";
+    let receiver = "";
+    if (account.isBeneficiary) {
+      receiver = account.beneficiaryName;
+      receiver_phone = account.beneficiaryContact;
+    } else {
+      receiver = user.username;
+      receiver_phone = user.msisdn;
     }
 
     if (!transaction.isActive)
@@ -259,7 +264,7 @@ exports.disburseMoney = async (req, res) => {
         "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
 
-    console.log(paymentObject)
+    console.log(paymentObject);
 
     const paymentResponse = await JuniPayPayment(
       paymentObject,
@@ -358,29 +363,28 @@ exports.paymentResponse = async (req, res) => {
   }
 };
 
-
 exports.getAccount = async (req, res) => {
-  try{
+  try {
     const params = req.params;
 
     const { user, token } = res.locals.user_info;
-  
+
     if (user == null)
       return wrapFailureResponse(res, 404, "User not found", null);
-  
+
     // getting the account details where the ID is equal to the ID of the account in the database
     const account = await Account.findById({ _id: params.accountId })
       .populate("transactions")
       .exec();
-    console.log(account)
+    console.log(account);
 
     if (account == null)
       return wrapFailureResponse(res, 404, "Account cannot be found");
 
     const transactions = account.transactions;
-  
+
     wrapSuccessResponse(res, 200, transactions, null, token);
-  }catch(error){
+  } catch (error) {
     return wrapFailureResponse(res, 500, error.message, null);
   }
 };
@@ -388,19 +392,19 @@ exports.getAccount = async (req, res) => {
 exports.getAccountsPerUser = async (req, res) => {
   try {
     const { user, token } = res.locals.user_info;
-  console.log(`here we have the user details ${user}`);
+    console.log(`here we have the user details ${user}`);
 
-  if (user == null)
-    return wrapFailureResponse(res, 404, "User not found", null);
+    if (user == null)
+      return wrapFailureResponse(res, 404, "User not found", null);
 
-  // getting the account details where the ID is equal to the ID of the account in the database
-  const account = await Account.find({ user: user._id })
-    .populate("transactions")
-    .exec();
-  if (account == null)
-    return wrapFailureResponse(res, 404, "Account cannot be found");
+    // getting the account details where the ID is equal to the ID of the account in the database
+    const account = await Account.find({ user: user._id })
+      .populate("transactions")
+      .exec();
+    if (account == null)
+      return wrapFailureResponse(res, 404, "Account cannot be found");
 
-  wrapSuccessResponse(res, 200, account, null, token);
+    wrapSuccessResponse(res, 200, account, null, token);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, null);
   }
@@ -431,4 +435,51 @@ function transactionObject(arr, payTime, duration, transAmount, extra, accID) {
     transactionAccountArray.push(transactionObject);
   }
   return transactionAccountArray;
+}
+
+async function makePayment(res, request, user) {
+  try {
+    const transactionId = Math.floor(
+      1000000000000 + Math.random() * 9000000000000
+    );
+
+    const paymentRequest = {
+      amount: request.totalPayAmount,
+      tot_amnt: request.totalPayAmount,
+      provider: request.provider,
+      phoneNumber: user.msisdn,
+      channel: "mobile_money",
+      senderEmail: user.email,
+      description: "test payment",
+      foreignID: `${transactionId}`,
+      callbackUrl:
+        "https://chop-money.fly.dev/api/v1/account/callback/response",
+    };
+
+    const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
+    console.log(paymentResponse);
+
+    if (paymentResponse.code != "00")
+      throw new Error(paymentResponse.response.message);
+
+    const paymentAudit = new Payment({
+      transactionId: transactionId,
+      paymentRequest: JSON.stringify(paymentRequest),
+      paymentResponse: JSON.stringify(paymentResponse.response.data),
+      amount: request.totalPayAmount,
+      user: user._id,
+      transaction: request.transactionId,
+    });
+    paymentAudit.save(paymentAudit);
+
+    return wrapSuccessResponse(
+      res,
+      200,
+      paymentResponse.response.data,
+      null,
+      token
+    );
+  } catch (error) {
+    return wrapFailureResponse(res, 500, error.message, error);
+  }
 }
