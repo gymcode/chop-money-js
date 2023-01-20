@@ -55,7 +55,7 @@ exports.userRegistration = async (req, res) => {
 
     // add user
     const userInput = new User({
-      username: request.username,
+      username: response.name,
       msisdn: msisdn,
       countryCode: request.countryCode,
       isoCode: request.isoCode,
