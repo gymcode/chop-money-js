@@ -142,7 +142,8 @@ exports.createAccount = async (req, res) => {
 
         // trigger money removal before proceeding with success response
         const paymentResponse = await makePayment(res, request, user)
-        wrapSuccessResponse(res, 200, paymentResponse, null, token);
+        console.log(paymentResponse, "and dhere tooo")
+        wrapSuccessResponse(res, 200, paymentResponse.response.data, null, token);
       })
       .catch(function (err) {
         return wrapFailureResponse(res, 500, err.message, err);
@@ -457,7 +458,6 @@ async function makePayment(res, request, user) {
     };
 
     const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
-    console.log(paymentResponse);
 
     if (paymentResponse.code != "00")
       throw new Error(paymentResponse.response.message);
@@ -477,7 +477,7 @@ async function makePayment(res, request, user) {
       200,
       paymentResponse.response.data,
       null,
-      token
+      null
     );
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);

@@ -8,6 +8,8 @@ const client = require("../config/redis");
 const bcrypt = require("bcryptjs");
 const { getMinutes } = require("../utils/dateTimeHelpers");
 const { NaloSendSms } = require("../config/sms");
+const JuniPayPayment = require("../config/juniPay");
+
 
 // user model
 const User = require("../models/User");
@@ -41,7 +43,7 @@ exports.userRegistration = async (req, res) => {
     const response = await JuniPayPayment({}, nameCheckUrl.href, "GET");
 
     if (response.code != "00") throw new Error(response.response.message);
-
+    console.log(response)
     // checking in the database if the user already exists
     let user = await User.findOne({ msisdn: msisdn }).exec();
 
@@ -55,7 +57,7 @@ exports.userRegistration = async (req, res) => {
 
     // add user
     const userInput = new User({
-      username: response.name,
+      username: response.response.data.name,
       msisdn: msisdn,
       countryCode: request.countryCode,
       isoCode: request.isoCode,
@@ -92,7 +94,7 @@ exports.userRegistration = async (req, res) => {
     wrapSuccessResponse(res, 200, user);
   } catch (error) {
     console.log(error);
-    return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
+    return wrapFailureResponse(res, 500, error.message);
   }
 };
 

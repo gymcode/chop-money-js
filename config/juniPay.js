@@ -35,7 +35,7 @@ async function JuniPayPayment(data, uri, method = "POST") {
       "content-type": "application/json",
     };
 
-    console.log(data, uri);
+    // console.log(data, uri);
 
     let response;
 
@@ -51,7 +51,7 @@ async function JuniPayPayment(data, uri, method = "POST") {
 
     return { code: "00", response: response };
   } catch (error) {
-    console.error(error.response.data.info);
+    // console.error(error.response.data.info);
     return { code: "01", response: error.response.data.info };
   }
 }
