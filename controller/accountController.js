@@ -13,6 +13,7 @@ const {
 } = require("../utils/dateTimeHelpers");
 const Generate = require("../utils/generateRandomID");
 const JuniPayPayment = require("../config/juniPay");
+const bcrypt = require("bcryptjs");
 
 const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
 const disbursementUrl = process.env.JUNI_PAY_DISBURSEMENT_ENDPOINT;
@@ -26,8 +27,7 @@ exports.createAccount = async (req, res) => {
     const request = req.body;
     const { user, token } = res.locals.user_info;
 
-    if (user == null)
-      return wrapFailureResponse(res, 404, "User not found", null);
+    if (user == null) throw new Error("User not found");
 
     let beneficiaryContact = "";
     // check the status of is beneficiary
@@ -37,7 +37,7 @@ exports.createAccount = async (req, res) => {
         request.beneficiaryContact,
         request.countryCode
       );
-      if (error) return wrapFailureResponse(res, 422, msg, null);
+      if (error) throw new Error(msg);
       beneficiaryContact = msg;
 
       // name contact validation
@@ -80,14 +80,12 @@ exports.createAccount = async (req, res) => {
     });
 
     const accountResponse = await accountInput.save();
-
-    if (accountResponse == null)
-      return wrapFailureResponse(res, 500, "Could not insert", null);
+    if (accountResponse == null) throw new Error("Could not insert");
 
     // update the user data with the account details
     user.accounts.push(accountResponse._id);
     user.save();
-
+    InsuranceType;
     // get the difference between the dates
     const days = diff_Days_Weeks(request.startDate, endDate);
     const weeks = diff_Days_Weeks(request.startDate, endDate, 7);
@@ -133,78 +131,27 @@ exports.createAccount = async (req, res) => {
         break;
     }
 
-    Transaction.insertMany(objectArr)
-      .then(async function (data) {
-        data.map(({ _id }) => {
-          accountResponse.transactions.push(_id);
-        });
-        accountResponse.save();
+    const paymentResponse = await makePayment(res, request, user);
+    console.log(paymentResponse);
+    if (paymentResponse.code != "00") throw new Error(paymentResponse.response);
 
-        // trigger money removal before proceeding with success response
-        const paymentResponse = await makePayment(res, request, user)
-        console.log(paymentResponse, "and dhere tooo")
-        wrapSuccessResponse(res, 200, paymentResponse.response.data, null, token);
-      })
-      .catch(function (err) {
-        return wrapFailureResponse(res, 500, err.message, err);
-      });
+    const savedTransactions = await Transaction.insertMany(objectArr);
+    if (savedTransactions == null)
+      throw new Error("Could not insert into the transaction table");
+
+    savedTransactions.map(({ _id }) => {
+      accountResponse.transactions.push(_id);
+    });
+
+    const updatedAccount = accountResponse.save();
+    if (updatedAccount == null)
+      throw new Error("Could not update user's account");
+
+    wrapSuccessResponse(res, 200, paymentResponse.response, null, token);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);
   }
 };
-
-// exports.makePayment = async (req, res) => {
-//   try {
-//     const { user, token } = res.locals.user_info;
-
-//     if (user == null)
-//       return wrapFailureResponse(res, 404, "User not found", null);
-
-//     const request = req.body;
-//     const transactionId = Math.floor(
-//       1000000000000 + Math.random() * 9000000000000
-//     );
-
-//     const paymentRequest = {
-//       amount: request.totalPayAmount,
-//       tot_amnt: request.totalPayAmount,
-//       provider: request.provider,
-//       phoneNumber: user.msisdn,
-//       channel: "mobile_money",
-//       senderEmail: "kyleabs20@gmail.com",
-//       description: "test payment",
-//       foreignID: `${transactionId}`,
-//       callbackUrl:
-//         "https://chop-money.fly.dev/api/v1/account/callback/response",
-//     };
-
-//     const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
-//     console.log(paymentResponse);
-
-//     if (paymentResponse.code != "00")
-//       throw new Error(paymentResponse.response.message);
-
-//     const paymentAudit = new Payment({
-//       transactionId: transactionId,
-//       paymentRequest: JSON.stringify(paymentRequest),
-//       paymentResponse: JSON.stringify(paymentResponse.response.data),
-//       amount: request.totalPayAmount,
-//       user: user._id,
-//       transaction: request.transactionId,
-//     });
-//     paymentAudit.save(paymentAudit);
-
-//     return wrapSuccessResponse(
-//       res,
-//       200,
-//       paymentResponse.response.data,
-//       null,
-//       token
-//     );
-//   } catch (error) {
-//     return wrapFailureResponse(res, 500, error.message, error);
-//   }
-// };
 
 exports.disburseMoney = async (req, res) => {
   try {
@@ -214,6 +161,14 @@ exports.disburseMoney = async (req, res) => {
       return wrapFailureResponse(res, 404, "User not found", null);
 
     const request = req.body;
+
+    const pinConfirmationStatus = bcrypt.compareSync(
+      request.password,
+      user.password
+    );
+
+    if (!pinConfirmationStatus)
+      throw new Error("Wrong password. Please try again.");
 
     // get the trasaction and check if it's active and has not been paid
     const transaction = await Transaction.findById({
@@ -450,7 +405,7 @@ async function makePayment(res, request, user) {
       provider: request.provider,
       phoneNumber: user.msisdn,
       channel: "mobile_money",
-      senderEmail: user.email,
+      senderEmail: request.email,
       description: "test payment",
       foreignID: `${transactionId}`,
       callbackUrl:
@@ -472,14 +427,8 @@ async function makePayment(res, request, user) {
     });
     paymentAudit.save(paymentAudit);
 
-    return wrapSuccessResponse(
-      res,
-      200,
-      paymentResponse.response.data,
-      null,
-      null
-    );
+    return { code: "00", response: paymentResponse.response.data };
   } catch (error) {
-    return wrapFailureResponse(res, 500, error.message, error);
+    return { code: "01", response: error.message };
   }
 }
