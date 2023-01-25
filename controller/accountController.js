@@ -32,19 +32,19 @@ exports.createAccount = async (req, res) => {
     let beneficiaryContact = "";
     // check the status of is beneficiary
     if (request.isBeneficiary) {
-      console.log(request.beneficiaryContact);
+
       const { error, msg } = CountryMsisdnValidation(
         request.beneficiaryContact,
         request.countryCode
       );
       if (error) throw new Error(msg);
-      beneficiaryContact = msg;
+      request.beneficiaryContact = msg;
 
       // name contact validation
       const beneficiaryCheckUrl = new URL(resolveUrl);
       beneficiaryCheckUrl.searchParams.set("channel", "mobile_money");
       beneficiaryCheckUrl.searchParams.set("provider", request.provider);
-      beneficiaryCheckUrl.searchParams.set("phoneNumber", beneficiaryContact);
+      beneficiaryCheckUrl.searchParams.set("phoneNumber", request.beneficiaryContact);
 
       console.log(beneficiaryCheckUrl.href);
 
@@ -220,10 +220,10 @@ exports.disburseMoney = async (req, res) => {
         "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
 
-    console.log(paymentObject);
+    console.log(paymentRequest);
 
     const paymentResponse = await JuniPayPayment(
-      paymentObject,
+      paymentRequest,
       disbursementUrl
     );
 

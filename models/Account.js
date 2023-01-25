@@ -17,6 +17,8 @@ const accountSchema = new Schema({
     remainder: {type:Number, default: 0.0},
     user: {type: Schema.Types.ObjectId, ref: 'users'},
     transactions: [{type: Schema.Types.ObjectId, ref: 'transactions'}],
+    availableAmountToCashOut: {type:Number, default: 0.0},
+    amountCashedOut: {type:Number, default: 0.0}, 
     version: {type: Number, default: 1}
 }, {timestamps: true})
 

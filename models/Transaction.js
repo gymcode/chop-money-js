@@ -8,7 +8,7 @@ const transactionSchema = new Schema({
     transactionStatus: {
         type: String, 
         enum: ["COMPLETED", "FAILED", "NEW"],
-        default: "NEW"
+        default: "COMPLETED"
     },
     transactionAmount: Number,
     isActive: {type: Boolean, default: true},
