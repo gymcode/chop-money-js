@@ -8,8 +8,8 @@ const paymentSchema = new Schema({
     paymentResponse: String,
     amount: Number,
     user: {type: Schema.Types.ObjectId, ref: 'users'},
-    transaction: {type: Schema.Types.ObjectId, ref: 'transactions'},
     statusDescription: {type: String, default: "PENDING"},
+    account: {type: Schema.Types.ObjectId, ref: "accounts"},
     isPaymentSuccessful: {type: Boolean},
     version: {type: Number, default: 1}
 }, {timestamps: true})

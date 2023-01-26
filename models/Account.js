@@ -19,6 +19,7 @@ const accountSchema = new Schema({
     transactions: [{type: Schema.Types.ObjectId, ref: 'transactions'}],
     availableAmountToCashOut: {type:Number, default: 0.0},
     amountCashedOut: {type:Number, default: 0.0}, 
+    isPaymentMade: {type: Boolean, default: false},
     version: {type: Number, default: 1}
 }, {timestamps: true})
 

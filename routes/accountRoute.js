@@ -12,7 +12,7 @@ router.get("/user/:accountId", isUserAuthenticated(client), accountController.ge
 
 router.get("/user-accounts", isUserAuthenticated(client), accountController.getAccountsPerUser)
 
-// router.post("/make-payment", isUserAuthenticated(client), accountController.makePayment)
+router.post("/top-up", isUserAuthenticated(client), accountController.topUp)
 
 router.post("/disburse-payment", isUserAuthenticated(client), accountController.disburseMoney)
 

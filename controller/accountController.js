@@ -131,7 +131,7 @@ exports.createAccount = async (req, res) => {
         break;
     }
 
-    const paymentResponse = await makePayment(res, request, user);
+    const paymentResponse = await makePayment(request, user, accountResponse._id);
     console.log(paymentResponse);
     if (paymentResponse.code != "00") throw new Error(paymentResponse.response);
 
@@ -170,14 +170,9 @@ exports.disburseMoney = async (req, res) => {
     if (!pinConfirmationStatus)
       throw new Error("Wrong password. Please try again.");
 
-    // get the trasaction and check if it's active and has not been paid
-    const transaction = await Transaction.findById({
-      _id: request.transactionId,
-    }).exec();
-
     // chech if the account is for a beneficiary or main user
     const account = await Account.findById({
-      _id: transaction.account,
+      _id: request.accountId,
     });
 
     if (account == null) throw new Error("Account does not exist");
@@ -191,16 +186,6 @@ exports.disburseMoney = async (req, res) => {
       receiver = user.username;
       receiver_phone = user.msisdn;
     }
-
-    if (!transaction.isActive)
-      throw new Error(
-        "Transaction amount has already been paid to this number."
-      );
-
-    // check if the time for the user to redraw money has reached
-    const currentDate = new Date();
-    if (transaction.date > currentDate)
-      throw new Error("it's not yet time to get your money!!!");
 
     const transactionId = Math.floor(
       1000000000000 + Math.random() * 9000000000000
@@ -236,7 +221,7 @@ exports.disburseMoney = async (req, res) => {
       paymentResponse: JSON.stringify(paymentResponse.response.data),
       amount: request.totalPayAmount,
       user: user._id,
-      transaction: request.transactionId,
+      account: request.accountId
     });
     paymentAudit.save(paymentAudit);
 
@@ -313,11 +298,67 @@ exports.paymentResponse = async (req, res) => {
         null
       );
 
+    // update the account details 
+    const updateAccount = await Account.updateOne(
+      { _id: payment.transaction },
+      {
+        update_at: new Date(),
+        transactionStatus: "COMPLETED",
+        isActive: false,
+      },
+      {
+        new: true,
+        upsert: true,
+        rawResult: true, // Return the raw result from the MongoDB driver
+      }
+    );
+
+    if (updateTransactionDetails.value.isActive)
+      return wrapFailureResponse(
+        res,
+        200,
+        "Could not update isActive status",
+        null
+      );
+
     return wrapSuccessResponse(res, 200, "success", null);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, null);
   }
 };
+
+exports.topUp = async (req, res) => {
+  try {
+    const { user, token } = res.locals.user_info;
+
+    if (user == null)
+      return wrapFailureResponse(res, 404, "User not found", null);
+
+    const request = req.body;
+
+    // get the account
+    const account = Account.find({id: request.accountId}).exec()
+    if(account != null) throw new Error("Account does not exist")
+
+  
+    if(account.startDate < new Date()) 
+      throw new Error("Oops sorry your the time to start receiving money has started yet there's no cash!!!")
+
+    const paymentResponse = await makePayment(res, request, user);
+    console.log(paymentResponse);
+    if (paymentResponse.code != "00") throw new Error(paymentResponse.response);
+
+    return wrapSuccessResponse(
+      res,
+      200,
+      paymentResponse.response.data,
+      null,
+      token
+    );
+  } catch (error) {
+    return wrapFailureResponse(res, 500, error.message, error);
+  }
+}
 
 exports.getAccount = async (req, res) => {
   try {
@@ -393,7 +434,7 @@ function transactionObject(arr, payTime, duration, transAmount, extra, accID) {
   return transactionAccountArray;
 }
 
-async function makePayment(res, request, user) {
+async function makePayment(request, user, userAccountId) {
   try {
     const transactionId = Math.floor(
       1000000000000 + Math.random() * 9000000000000
@@ -423,7 +464,7 @@ async function makePayment(res, request, user) {
       paymentResponse: JSON.stringify(paymentResponse.response.data),
       amount: request.totalPayAmount,
       user: user._id,
-      transaction: request.transactionId,
+      account: userAccountId
     });
     paymentAudit.save(paymentAudit);
 
