@@ -18,8 +18,6 @@ function diff_Days_Weeks(startDate, endDate, limit = 1){
 function getCurrentDateTime(hours){
     const currentDate = new Date()
 
-    // currentDate.setHours(0, 0, 0, 0);
-
     const newMinutes = currentDate.getDay() + hours
     currentDate.setHours(newMinutes)
    

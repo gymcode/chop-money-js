@@ -61,3 +61,22 @@ function CountryMsisdnValidation(msisdn, countryCode = "GH") {
 
 module.exports = { CountryMsisdnValidation };
 
+
+// def climbingLeaderboard(ranked, player):
+//     ranked = sorted(list(set(ranked)), reverse=True)
+//     player = sorted(player, reverse=True)
+//     print(f"don't take me there {ranked}")
+//     print(f"we will make it {player}")
+//     l=len(ranked)
+//     j=0
+    
+//     ans=[]
+//     for i in range(len(player)):
+//         print(f"this is me {i}")
+//         while j<l and player[i]<ranked[j]:
+//             j+=1
+//             print(f"oh no {j}")
+//         print(f"printing till we get it {ans}")
+//         ans.append(j+1)
+//     print(f"hello {ans}")
+//     return ans[::-1]

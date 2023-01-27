@@ -275,36 +275,12 @@ exports.paymentResponse = async (req, res) => {
         null
       );
 
-    // update the transaction details
-    const updateTransactionDetails = await Transaction.updateOne(
-      { _id: payment.transaction },
-      {
-        update_at: new Date(),
-        transactionStatus: "COMPLETED",
-        isActive: false,
-      },
-      {
-        new: true,
-        upsert: true,
-        rawResult: true, // Return the raw result from the MongoDB driver
-      }
-    );
-
-    if (updateTransactionDetails.value.isActive)
-      return wrapFailureResponse(
-        res,
-        200,
-        "Could not update isActive status",
-        null
-      );
-
     // update the account details 
     const updateAccount = await Account.updateOne(
-      { _id: payment.transaction },
+      { _id: payment.account },
       {
         update_at: new Date(),
-        transactionStatus: "COMPLETED",
-        isActive: false,
+        isPaymentMade: true,
       },
       {
         new: true,
@@ -313,7 +289,7 @@ exports.paymentResponse = async (req, res) => {
       }
     );
 
-    if (updateTransactionDetails.value.isActive)
+    if (updateAccount.value.isActive)
       return wrapFailureResponse(
         res,
         200,
