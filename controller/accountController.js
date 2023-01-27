@@ -162,6 +162,15 @@ exports.disburseMoney = async (req, res) => {
 
     const request = req.body;
 
+     // chech if the account is for a beneficiary or main user
+     const account = await Account.findById({
+      _id: request.accountId,
+    });
+
+    // check if the user can withdraw that amount of money or not
+    if (request.amount > account.availableAmountToCashOut) 
+      throw new Error("Oops amount entered it more than the amount available for cash out")
+
     const pinConfirmationStatus = bcrypt.compareSync(
       request.password,
       user.password
@@ -169,11 +178,6 @@ exports.disburseMoney = async (req, res) => {
 
     if (!pinConfirmationStatus)
       throw new Error("Wrong password. Please try again.");
-
-    // chech if the account is for a beneficiary or main user
-    const account = await Account.findById({
-      _id: request.accountId,
-    });
 
     if (account == null) throw new Error("Account does not exist");
 
@@ -192,7 +196,7 @@ exports.disburseMoney = async (req, res) => {
     );
 
     const paymentRequest = {
-      amount: transaction.transactionAmount,
+      amount: request.amount,
       provider: request.provider,
       phoneNumber: process.env.JUNI_PAY_SENDER_MSISDN,
       receiver_phone: receiver_phone,
