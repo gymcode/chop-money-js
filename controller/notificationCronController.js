@@ -61,4 +61,29 @@ async function CronNotificatioController() {
   } catch (error) {}
 }
 
+function removeDuplicates(array){
+  const filteredArray = array.filter((item, index)=>{
+      return array.indexOf(item) == index
+  })
+  return filteredArray
+}
+
+function climbingLeaderboard(ranked, player) {
+  // Write your code here
+  ranked = removeDuplicates(ranked)
+  player = player.reverse()
+  console.log(player)
+  let j =0;
+  
+  let playerRanks = []
+  for (let i = 0; i<player.length; i++){
+      for(j; j<ranked.length; j++){
+          if(player[i] < ranked[j]){
+              j += 1 
+              console.log(j)     
+          }
+      }
+  }
+  console.log(j)
+}
 module.exports = CronNotificatioController;

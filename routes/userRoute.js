@@ -11,6 +11,8 @@ const {userValidationMiddleware, isUserAuthenticated} = require("../middleware/u
 const userController = require("../controller/userController")
 
 // route to register a new user 
+router.get("/name-check", userController.nameCheck)
+
 router.post('/register', userValidationMiddleware(RegistrationSchema), userController.userRegistration)
 
 router.put("/confirm-otp", userController.confirmOTP)

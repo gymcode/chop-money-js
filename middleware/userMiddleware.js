@@ -16,10 +16,9 @@ function userValidationMiddleware(schema) {
   };
 }
 
-function isUserAuthenticated(client) {
+function isUserAuthenticated() {
   return async (req, res, next) => {
     try {
-      let payload;
 
       // getting from the headers
       const authHeader = req.headers["authorization"];
@@ -40,63 +39,22 @@ function isUserAuthenticated(client) {
           null
         );
 
-      const token = authHeader.substring(7);
+      const token = authHeader.split(" ")
 
-      let accessToken = token;
+      let accessToken = token[1];
+
       const data = verifySignedJwtWebToken(
-        token,
+        accessToken,
         process.env.ACCESS_TOKEN_SECRET
       );
 
-      payload = data.payload;
+      console.log(data)
 
-      if (data.payload == null && !data.expired)
+      if (data.expired)
         return wrapFailureResponse(res, 400, "Un-authorized access", null);
 
-      // check for the active status of the token
-
-      const value = await client.get(token);
-
-      if (value == null || !JSON.parse(value).active)
-        return wrapFailureResponse(
-          res,
-          400,
-          "Un-authorized access. Try logging in ",
-          null
-        );
-
-      // checking if the token has expired
-      if (data.payload == null && data.expired) {
-        payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, {
-          ignoreExpiration: true,
-        });
-
-        // delete the token from local storage
-        client.del(token);
-
-        // use the id from the payload to get the refresh token
-        const storage_key = `${payload._id}_REFRESH_TOKEN`;
-        const refreshToken = await client.get(storage_key);
-
-        // verify the refresh token and generate a new token for the user
-        const refreshTokenVerification = verifySignedJwtWebToken(
-          refreshToken,
-          process.env.REFRESH_TOKEN_SECRET
-        );
-
-        if (refreshTokenVerification.payload == null)
-          return wrapFailureResponse(res, 400, "Messed up", null);
-
-        accessToken = jwt.sign(
-          { _id: refreshTokenVerification.payload._id },
-          process.env.ACCESS_TOKEN_SECRET,
-          { expiresIn: "1d" }
-        );
-
-        await client.set(`${accessToken}`, JSON.stringify({ active: true }));
-      }
-
-      accessToken == token ? (accessToken = "") : accessToken;
+      let payload = data.payload;
+      console.log(payload)
 
       // use the id in the payload to get the user data
       const user = await User.findOne({ _id: payload._id })

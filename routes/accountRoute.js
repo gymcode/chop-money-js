@@ -7,7 +7,6 @@ const {isUserAuthenticated} = require("../middleware/userMiddleware")
 
 router.post("/activate-account",  isUserAuthenticated(client), accountController.createAccount)
 
-
 router.get("/user/:accountId", isUserAuthenticated(client), accountController.getAccount)
 
 router.get("/user-accounts", isUserAuthenticated(client), accountController.getAccountsPerUser)

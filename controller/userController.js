@@ -10,13 +10,33 @@ const { getMinutes } = require("../utils/dateTimeHelpers");
 const { NaloSendSms } = require("../config/sms");
 const JuniPayPayment = require("../config/juniPay");
 
-
 // user model
 const User = require("../models/User");
 const generateOtp = require("../utils/generateOtp");
 const _ = require("lodash");
 const { signJwtWebToken } = require("../utils/jwt_helpers");
 const resolveUrl = process.env.JUNI_RESOLVE_ENDPOINT;
+
+exports.nameCheck = async (req, res) => {
+  try {
+    const request = req.body;
+
+    // check if number is valid
+    const nameCheckUrl = new URL(resolveUrl);
+    nameCheckUrl.searchParams.set("channel", "mobile_money");
+    nameCheckUrl.searchParams.set("provider", request.provider);
+    nameCheckUrl.searchParams.set("phoneNumber", request.msisdn);
+
+    const response = await JuniPayPayment({}, nameCheckUrl.href, "GET");
+    console.log(response)
+    if (response.code != "00") throw new Error(response.response.message);
+
+    return wrapSuccessResponse(res, 200, response.response.data, null, null)    
+  } catch (error) {
+    console.log(error);
+    return wrapFailureResponse(res, 500, error.message);
+  }
+};
 
 /*
 register a new user 
@@ -34,16 +54,6 @@ exports.userRegistration = async (req, res) => {
     }
     const msisdn = msg;
 
-    // check if number is valid
-    const nameCheckUrl = new URL(resolveUrl);
-    nameCheckUrl.searchParams.set("channel", "mobile_money");
-    nameCheckUrl.searchParams.set("provider", request.provider);
-    nameCheckUrl.searchParams.set("phoneNumber", msisdn);
-
-    const response = await JuniPayPayment({}, nameCheckUrl.href, "GET");
-
-    if (response.code != "00") throw new Error(response.response.message);
-    console.log(response)
     // checking in the database if the user already exists
     let user = await User.findOne({ msisdn: msisdn }).exec();
 
@@ -55,9 +65,13 @@ exports.userRegistration = async (req, res) => {
         return wrapSuccessResponse(res, 200, user);
     }
 
+    const fullName = request.username.split(" ")
+
     // add user
     const userInput = new User({
-      username: response.response.data.name,
+      username: request.username,
+      firstName: fullName[0],
+      otherNames: fullName.slice(1).join(" "),
       msisdn: msisdn,
       countryCode: request.countryCode,
       isoCode: request.isoCode,
@@ -238,6 +252,8 @@ exports.resendOTP = async (req, res) => {
     return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
   }
 };
+
+
 
 exports.resetPin = async (req, res) => {
   try {
@@ -531,12 +547,7 @@ exports.logOut = (req, res) => {
     if (user == null)
       return wrapFailureResponse(res, 404, "User not found", null);
 
-    // setting the access token to false
-    client.set(token, JSON.stringify({ active: false }));
-
-    // deleting the refresh token from the cache
-    const storageKey = `${user._id}_REFRESH_TOKEN`;
-    client.del(storageKey);
+    // expire jwt token 
 
     wrapSuccessResponse(res, 200, null, null, "");
   } catch (error) {
