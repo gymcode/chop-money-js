@@ -13,7 +13,7 @@ async function CronNotificatioController() {
       .populate("account")
       .exec();
 
-    transactions.forEach((transaction) => {
+    transactions.forEach(async(transaction) => {
       // console.log(transaction);
       if (transaction.createdAt == new Date()) {
         // we need to make this money available to the user and set the isActive to false
@@ -24,7 +24,7 @@ async function CronNotificatioController() {
         currentAmountAvailable += currentAmountAvailable + transactionAmount;
 
         // updating the user's account with the new amount
-        const updatedAccount = Account.updateOne(
+        const updatedAccount = await Account.updateOne(
           { _id: transaction.account._id },
           {
             updateAt: new Date(),
@@ -40,7 +40,7 @@ async function CronNotificatioController() {
         if (updatedAccount.value == null) throw new Error("Could not update the user account")
 
         // update the user's transaction
-        const updateTransaction = Transaction.updateOne(
+        const updateTransaction = await Transaction.updateOne(
           { _id: transaction._id },
           {
             updateAt: new Date(),
@@ -61,29 +61,29 @@ async function CronNotificatioController() {
   } catch (error) {}
 }
 
-function removeDuplicates(array){
-  const filteredArray = array.filter((item, index)=>{
-      return array.indexOf(item) == index
-  })
-  return filteredArray
-}
+// function removeDuplicates(array){
+//   const filteredArray = array.filter((item, index)=>{
+//       return array.indexOf(item) == index
+//   })
+//   return filteredArray
+// }
 
-function climbingLeaderboard(ranked, player) {
-  // Write your code here
-  ranked = removeDuplicates(ranked)
-  player = player.reverse()
-  console.log(player)
-  let j =0;
+// function climbingLeaderboard(ranked, player) {
+//   // Write your code here
+//   ranked = removeDuplicates(ranked)
+//   player = player.reverse()
+//   console.log(player)
+//   let j =0;
   
-  let playerRanks = []
-  for (let i = 0; i<player.length; i++){
-      for(j; j<ranked.length; j++){
-          if(player[i] < ranked[j]){
-              j += 1 
-              console.log(j)     
-          }
-      }
-  }
-  console.log(j)
-}
+//   let playerRanks = []
+//   for (let i = 0; i<player.length; i++){
+//       for(j; j<ranked.length; j++){
+//           if(player[i] < ranked[j]){
+//               j += 1 
+//               console.log(j)     
+//           }
+//       }
+//   }
+//   console.log(j)
+// }
 module.exports = CronNotificatioController;

@@ -2,11 +2,9 @@ const mongoose = require("mongoose")
 const {Schema} = mongoose
 
 const transactionHistorySchema = new Schema({
-    time: String,
     transactionAmount: Number,
-    account: {type: Schema.Types.ObjectId, ref: "accounts"},
-    transaction: {type: Schema.Types.ObjectId, ref: "transaction"},
-    user: {type: Schema.Types.ObjectId, ref: "user"},
+    account: {type: Schema.Types.ObjectId, ref: "accounts"},    
+    status: String,
     version: {type: Number, default: 1}
 }, {timestamps: true})
 

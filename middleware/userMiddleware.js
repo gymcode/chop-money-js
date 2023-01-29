@@ -48,13 +48,10 @@ function isUserAuthenticated() {
         process.env.ACCESS_TOKEN_SECRET
       );
 
-      console.log(data)
-
       if (data.expired)
         return wrapFailureResponse(res, 400, "Un-authorized access", null);
 
       let payload = data.payload;
-      console.log(payload)
 
       // use the id in the payload to get the user data
       const user = await User.findOne({ _id: payload._id })
