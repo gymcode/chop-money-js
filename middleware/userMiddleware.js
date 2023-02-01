@@ -49,7 +49,17 @@ function isUserAuthenticated() {
       );
 
       if (data.expired)
-        return wrapFailureResponse(res, 400, "Un-authorized access", null);
+        return res.status(401).json({
+          code: "03",
+          msg: "failure",
+          data: null,
+          error: {
+              error: true,
+              errMsg: "Un-authorized access", 
+              detailedError: null
+          }
+      })
+      
 
       let payload = data.payload;
 
