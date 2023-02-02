@@ -154,7 +154,8 @@ exports.createAccount = async (req, res) => {
     if (updatedAccount == null)
       throw new Error("Could not update user's account");
 
-    wrapSuccessResponse(res, 200, paymentResponse.response, null, token);
+    const response = [paymentResponse.response, accountResponse]
+    wrapSuccessResponse(res, 200, response, null, token);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);
   }
