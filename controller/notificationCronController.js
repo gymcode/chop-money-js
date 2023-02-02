@@ -4,7 +4,7 @@ const Account = require("../models/Account");
 
 async function CronNotificatioController() {
   try {
-    const anHourFromNow = getCurrentDateTime(24);
+    const anHourFromNow = getCurrentDateTime(20);
     // console.log(anHourFromNow)
     let transactions = await Transaction.find({
       isActive: true,
