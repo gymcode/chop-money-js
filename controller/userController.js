@@ -12,6 +12,7 @@ const JuniPayPayment = require("../config/juniPay");
 
 // user model
 const User = require("../models/User");
+const UserRepo = require("../repo/userRepo");
 const generateOtp = require("../utils/generateOtp");
 const _ = require("lodash");
 const { signJwtWebToken } = require("../utils/jwt_helpers");
@@ -28,10 +29,10 @@ exports.nameCheck = async (req, res) => {
     nameCheckUrl.searchParams.set("phoneNumber", request.msisdn);
 
     const response = await JuniPayPayment({}, nameCheckUrl.href, "GET");
-    console.log(response)
+    console.log(response);
     if (response.code != "00") throw new Error(response.response.message);
 
-    return wrapSuccessResponse(res, 200, response.response.data, null, null)    
+    return wrapSuccessResponse(res, 200, response.response.data, null, null);
   } catch (error) {
     console.log(error);
     return wrapFailureResponse(res, 500, error.message);
@@ -43,50 +44,28 @@ register a new user
 */
 exports.userRegistration = async (req, res) => {
   try {
-    // validating the msisdn based on the country code
     const request = req.body;
     const { error, msg } = CountryMsisdnValidation(
       request.msisdn,
       request.countryCode
     );
-    if (error) {
-      return wrapFailureResponse(res, 422, msg, null);
-    }
+    if (error) throw new Error(msg);
     const msisdn = msg;
 
-    // checking in the database if the user already exists
-    let user = await User.findOne({ msisdn: msisdn }).exec();
+    let user = await UserRepo.getUserByMsisdn(msisdn);
 
     if (user != null) {
-      if (user.isPinSet)
-        return wrapFailureResponse(res, 404, "User already exists", null);
+      if (user.isPinSet) throw new Error("User already exists");
 
       if (!user.isOtpConfirmed || !user.isPinSet)
         return wrapSuccessResponse(res, 200, user);
     }
 
-    const fullName = request.username.split(" ")
+    const names = request.username.split(" ");
+    user = await UserRepo.addUser(request, msisdn, names);
 
-    // add user
-    const userInput = new User({
-      username: request.username,
-      firstName: fullName[0],
-      otherNames: fullName.slice(1).join(" "),
-      msisdn: msisdn,
-      countryCode: request.countryCode,
-      isoCode: request.isoCode,
-    });
-    user = await userInput.save();
+    if (user == null) throw new Error("Could not insert in the database");
 
-    if (user == null)
-      return wrapFailureResponse(
-        res,
-        500,
-        "Could not insert in the database",
-        null
-      );
-
-    // generate code  hash code
     const code = GenerateOTP();
     console.log(code);
     const codeHash = bcrypt.hashSync(`${code}`, bcrypt.genSaltSync(10));
@@ -123,20 +102,12 @@ exports.confirmOTP = async (req, res) => {
       request.msisdn,
       request.countryCode
     );
-    if (error) {
-      return wrapFailureResponse(res, 422, msg, null);
-    }
-
+    if (error) throw new Error(msg);
     const msisdn = msg;
-    // getting the user details based on the msisdn
-    const user = await User.findOne({ msisdn: msisdn }).exec();
+
+    const user = await UserRepo.getUserByMsisdn(msisdn);
     if (user == null)
-      return wrapFailureResponse(
-        res,
-        404,
-        "You do not have an account, please consider siging up",
-        null
-      );
+      throw new Error("You do not have an account, please consider siging up");
 
     // get the otp from the cached data
     const storageKey = `${user._id}_OTP`;
@@ -151,7 +122,7 @@ exports.confirmOTP = async (req, res) => {
       );
 
     if (data == null && !user.isOtpConfirmed)
-      return wrapFailureResponse(res, 500, "Please try signing up first", null);
+      throw new Error("Please try signing up first");
 
     // checking for the expire by comparison
     const currentDateTime = new Date();
@@ -252,8 +223,6 @@ exports.resendOTP = async (req, res) => {
     return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
   }
 };
-
-
 
 exports.resetPin = async (req, res) => {
   try {
@@ -547,7 +516,7 @@ exports.logOut = (req, res) => {
     if (user == null)
       return wrapFailureResponse(res, 404, "User not found", null);
 
-    // expire jwt token 
+    // expire jwt token
 
     wrapSuccessResponse(res, 200, null, null, "");
   } catch (error) {
