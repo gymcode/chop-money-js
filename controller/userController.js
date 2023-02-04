@@ -256,7 +256,7 @@ exports.setPin = async (req, res) => {
       throw new Error("Could not update OTP confirmation status");
 
     const token = await signJwtWebToken(user, client);
-    
+
     wrapSuccessResponse(
       res,
       200,
@@ -281,34 +281,17 @@ exports.userLogin = async (req, res) => {
       request.msisdn,
       request.countryCode
     );
-    if (error) {
-      return wrapFailureResponse(res, 422, msg, null);
-    }
-
+    if (error) throw new Error(msg);
     const msisdn = msg;
-    // getting the user details based on the msisdn
-    const user = await User.findOne({ msisdn: msisdn })
-      .populate({
-        path: "accounts",
-        populate: { path: "transactions" },
-      })
-      .exec();
-    console.log(user);
-    if (user == null)
-      return wrapFailureResponse(
-        res,
-        404,
-        "You do not have an account, please consider siging up",
-        null
-      );
 
-    // checking if the user's password exists in the database
+    const user = await UserRepo.getPopulatedUserDetailsByMsisdn(msisdn);
+
+    if (user == null)
+      throw new Error("You do not have an account, please consider siging up");
+
     if (user.password == undefined)
-      return wrapFailureResponse(
-        res,
-        404,
-        "Password does not seem to have been set whiles the pin was being set",
-        null
+      throw new Error(
+        "Password does not seem to have been set whiles the pin was being set"
       );
 
     // if (new Date() < user.lockPeriod)
@@ -318,19 +301,17 @@ exports.userLogin = async (req, res) => {
       request.pin,
       user.password
     );
-    if (!pinConfirmationStatus) {
-      return wrapFailureResponse(res, 404, "wrong password", null);
-    } else {
-      // success
-      const token = await signJwtWebToken(user, client);
-      wrapSuccessResponse(
-        res,
-        200,
-        _.omit(JSON.parse(JSON.stringify(user)), ["password"]),
-        null,
-        token
-      );
-    }
+
+    if (!pinConfirmationStatus) throw new Error("wrong msisdn or password");
+
+    const token = await signJwtWebToken(user, client);
+    wrapSuccessResponse(
+      res,
+      200,
+      _.omit(JSON.parse(JSON.stringify(user)), ["password"]),
+      null,
+      token
+    );
   } catch (error) {
     console.log(error);
     return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
@@ -344,8 +325,7 @@ exports.getUser = (req, res) => {
   try {
     const { user, token } = res.locals.user_info;
 
-    if (user == null)
-      return wrapFailureResponse(res, 404, "User not found", null);
+    if (user == null) throw new Error("User not found");
 
     wrapSuccessResponse(
       res,
@@ -368,33 +348,10 @@ exports.updateUserDetails = async (req, res) => {
     const { user, token } = res.locals.user_info;
 
     const request = req.body;
+    if (user == null) throw new Error("User not found");
 
-    if (user == null)
-      return wrapFailureResponse(res, 404, "User not found", null);
-
-    // update the users details
-    const resp = await User.findOneAndUpdate(
-      { _id: user._id },
-      {
-        username: request.username,
-        email: request.email,
-        gender: request.gender,
-        update_at: new Date(),
-      },
-      {
-        new: true,
-        upsert: true,
-        rawResult: true, // Return the raw result from the MongoDB driver
-      }
-    );
-
-    if (resp.ok != 1)
-      return wrapFailureResponse(
-        res,
-        200,
-        "Could not update user detail",
-        null
-      );
+    const resp = UserRepo.updateUserDetails(request, user);
+    if (resp.ok != 1) throw new Error("Could not update user detail");
 
     wrapSuccessResponse(
       res,
