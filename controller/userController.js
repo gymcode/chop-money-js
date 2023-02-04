@@ -154,20 +154,11 @@ exports.resendOTP = async (req, res) => {
       request.msisdn,
       request.countryCode
     );
-    if (error) {
-      return wrapFailureResponse(res, 422, msg, null);
-    }
-
+    if (error) throw new Error(msg)
     const msisdn = msg;
-    // getting the user details based on the msisdn
-    const user = await User.findOne({ msisdn: msisdn }).exec();
-    if (user == null)
-      return wrapFailureResponse(
-        res,
-        404,
-        "You do not have an account, please consider siging up",
-        null
-      );
+
+    const user = await UserRepo.getUserByMsisdn(msisdn)
+    if (user == null) throw new Error("You do not have an account, please consider siging up")
 
     // generating the otp
     const code = generateOtp();
