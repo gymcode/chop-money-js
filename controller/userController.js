@@ -79,7 +79,6 @@ exports.userRegistration = async (req, res) => {
 
     await client.set(storageKey, JSON.stringify(otpStorageObject));
 
-    // TODO(send SMS to user with the otp)
     NaloSendSms(
       `+${msisdn}`,
       `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
@@ -154,11 +153,12 @@ exports.resendOTP = async (req, res) => {
       request.msisdn,
       request.countryCode
     );
-    if (error) throw new Error(msg)
+    if (error) throw new Error(msg);
     const msisdn = msg;
 
-    const user = await UserRepo.getUserByMsisdn(msisdn)
-    if (user == null) throw new Error("You do not have an account, please consider siging up")
+    const user = await UserRepo.getUserByMsisdn(msisdn);
+    if (user == null)
+      throw new Error("You do not have an account, please consider siging up");
 
     // generating the otp
     const code = generateOtp();
@@ -175,10 +175,9 @@ exports.resendOTP = async (req, res) => {
 
     await client.set(storageKey, JSON.stringify(otpStorageObject));
 
-    // TODO(send SMS to user with the otp)
     NaloSendSms(
       `+${msisdn}`,
-      `Your one time password for chop money is ${code}`
+      `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
     );
 
     wrapSuccessResponse(res, 200, user);
@@ -190,29 +189,17 @@ exports.resendOTP = async (req, res) => {
 
 exports.resetPin = async (req, res) => {
   try {
-    // validating the msisdn based on the country code
     const request = req.body;
-    console.log(request);
     const { error, msg } = CountryMsisdnValidation(
       request.msisdn,
       request.countryCode
     );
-    if (error) {
-      return wrapFailureResponse(res, 422, msg, null);
-    }
+    if (error) throw new Error(msg);
     const msisdn = msg;
 
-    // checking in the database if the user already exists
-    let user = await User.findOne({ msisdn: msisdn }).exec();
-    if (user == null)
-      return wrapFailureResponse(
-        res,
-        404,
-        "User does not exist. Please sign up",
-        null
-      );
+    let user = await UserRepo.getUserByMsisdn(msisdn);
+    if (user == null) throw new Error("User does not exist. Please sign up");
 
-    // generate code  hash code
     const code = GenerateOTP();
     console.log(code);
     const codeHash = bcrypt.hashSync(`${code}`, bcrypt.genSaltSync(10));
@@ -226,29 +213,12 @@ exports.resetPin = async (req, res) => {
 
     await client.set(storageKey, JSON.stringify(otpStorageObject));
 
-    // update user details
-    const resp = await User.findOneAndUpdate(
-      { _id: user._id },
-      {
-        isPinSet: false,
-        activated: false,
-        isOtpConfirmed: false,
-        update_at: new Date(),
-      },
-      {
-        new: true,
-        upsert: true,
-        rawResult: true, // Return the raw result from the MongoDB driver
-      }
-    );
-    // console.log(resp)
-    if (resp.ok != 1)
-      return wrapFailureResponse(res, 200, "Could not reset account", null);
+    const resp = await UserRepo.resetUserAccount(user);
+    if (resp.ok != 1) throw new Error("Could not reset account");
 
-    // TODO(send SMS to user with the otp)
     NaloSendSms(
       `+${msisdn}`,
-      `Your one time password for chop money is ${code}`
+      `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
     );
 
     wrapSuccessResponse(res, 200, user);
