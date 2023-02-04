@@ -131,8 +131,9 @@ exports.confirmOTP = async (req, res) => {
 
     client.del(storageKey);
 
-    const resp = UserRepo.updateOTPIsOtpConfirmed(user);
+    const resp = await UserRepo.updateOTPIsOtpConfirmed(user);
 
+    console.log(resp)
     if (!resp.value.isOtpConfirmed)
       throw new Error("Could not update OTP confirmation status");
 
@@ -371,7 +372,7 @@ it should sign out user
 */
 exports.logOut = (req, res) => {
   try {
-    const { user, token } = res.locals.user_info;
+    const { user } = res.locals.user_info;
 
     if (user == null)
       return wrapFailureResponse(res, 404, "User not found", null);

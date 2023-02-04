@@ -1,6 +1,6 @@
 const User = require("../models/User");
 
-export async function addUser(request, msisdn, names) {
+ async function addUser(request, msisdn, names) {
   const userRequest = new User({
     username: request.username,
     firstName: names[0],
@@ -12,11 +12,11 @@ export async function addUser(request, msisdn, names) {
   return await userRequest.save();
 }
 
-export async function getUserByMsisdn(msisdn) {
+ async function getUserByMsisdn(msisdn) {
   return await User.findOne({ msisdn: msisdn }).exec();
 }
 
-export async function getPopulatedUserDetailsByMsisdn(msisdn) {
+ async function getPopulatedUserDetailsByMsisdn(msisdn) {
   return await User.findOne({ msisdn: msisdn })
     .populate({
       path: "accounts",
@@ -25,7 +25,7 @@ export async function getPopulatedUserDetailsByMsisdn(msisdn) {
     .exec();
 }
 
-export async function updateOTPIsOtpConfirmed(user) {
+ async function updateOTPIsOtpConfirmed(user) {
   return await User.findOneAndUpdate(
     { _id: user._id },
     { isOtpConfirmed: true, update_at: new Date() },
@@ -37,7 +37,7 @@ export async function updateOTPIsOtpConfirmed(user) {
   );
 }
 
-export async function resetUserAccount(user) {
+ async function resetUserAccount(user) {
   return await User.findOneAndUpdate(
     { _id: user._id },
     {
@@ -54,7 +54,7 @@ export async function resetUserAccount(user) {
   );
 }
 
-export async function updateUserDetails(request, user) {
+ async function updateUserDetails(request, user) {
   return await User.findOneAndUpdate(
     { _id: user._id },
     {
@@ -72,7 +72,7 @@ export async function updateUserDetails(request, user) {
 }
 
 
-export async function activateUserAccount(hashedPin, user) {
+ async function activateUserAccount(hashedPin, user) {
   return await User.findOneAndUpdate(
     { _id: user._id },
     {
@@ -87,4 +87,15 @@ export async function activateUserAccount(hashedPin, user) {
       rawResult: true, // Return the raw result from the MongoDB driver
     }
   );
+}
+
+
+module.exports = {
+  addUser,
+  getUserByMsisdn,
+  getPopulatedUserDetailsByMsisdn,
+  updateOTPIsOtpConfirmed,
+  updateUserDetails,
+  resetUserAccount,
+  activateUserAccount
 }
