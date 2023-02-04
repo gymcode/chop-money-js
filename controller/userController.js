@@ -96,7 +96,6 @@ it should confirm otp
 */
 exports.confirmOTP = async (req, res) => {
   try {
-    // getting the request body
     const request = req.body;
     const { error, msg } = CountryMsisdnValidation(
       request.msisdn,
@@ -109,7 +108,6 @@ exports.confirmOTP = async (req, res) => {
     if (user == null)
       throw new Error("You do not have an account, please consider siging up");
 
-    // get the otp from the cached data
     const storageKey = `${user._id}_OTP`;
     const value = await client.get(storageKey);
     const data = JSON.parse(value);
@@ -124,45 +122,20 @@ exports.confirmOTP = async (req, res) => {
     if (data == null && !user.isOtpConfirmed)
       throw new Error("Please try signing up first");
 
-    // checking for the expire by comparison
     const currentDateTime = new Date();
     if (currentDateTime > new Date(data.expire_at))
-      return wrapFailureResponse(
-        res,
-        500,
-        "The OTP has expired, please resend OTP"
-      );
+      throw new Error("The OTP has expired, please resend OTP");
 
-    // comparing the hashed OTP and the code
     const otpCodeComparison = bcrypt.compareSync(request.code, data.code);
     if (!otpCodeComparison)
-      return wrapFailureResponse(
-        res,
-        500,
-        "OTPs do not match, please try again"
-      );
+      throw new Error("OTPs do not match, please try again");
 
-    // deleting the cached data
     client.del(storageKey);
 
-    // update otp confirm status for the user
-    const resp = await User.findOneAndUpdate(
-      { _id: user._id },
-      { isOtpConfirmed: true, update_at: new Date() },
-      {
-        new: true,
-        upsert: true,
-        rawResult: true, // Return the raw result from the MongoDB driver
-      }
-    );
+    const resp = UserRepo.updateOTPIsOtpConfirmed(user);
 
     if (!resp.value.isOtpConfirmed)
-      return wrapFailureResponse(
-        res,
-        200,
-        "Could not update OTP confirmation status",
-        null
-      );
+      throw new Error("Could not update OTP confirmation status");
 
     wrapSuccessResponse(res, 200, resp.value, null);
   } catch (error) {
