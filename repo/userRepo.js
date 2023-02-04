@@ -32,7 +32,7 @@ export async function updateOTPIsOtpConfirmed(user) {
     {
       new: true,
       upsert: true,
-      rawResult: true, // Return the raw result from the MongoDB driver
+      rawResult: true, 
     }
   );
 }
@@ -49,18 +49,36 @@ export async function resetUserAccount(user) {
     {
       new: true,
       upsert: true,
-      rawResult: true, // Return the raw result from the MongoDB driver
+      rawResult: true, 
     }
   );
 }
 
-export async function updateUserDetails(request) {
+export async function updateUserDetails(request, user) {
   return await User.findOneAndUpdate(
     { _id: user._id },
     {
       username: request.username,
       email: request.email,
       gender: request.gender,
+      update_at: new Date(),
+    },
+    {
+      new: true,
+      upsert: true,
+      rawResult: true, 
+    }
+  );
+}
+
+
+export async function activateUserAccount(hashedPin, user) {
+  return await User.findOneAndUpdate(
+    { _id: user._id },
+    {
+      isPinSet: true,
+      password: hashedPin,
+      activated: true,
       update_at: new Date(),
     },
     {

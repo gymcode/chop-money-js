@@ -239,55 +239,24 @@ exports.setPin = async (req, res) => {
       request.msisdn,
       request.countryCode
     );
-    if (error) {
-      return wrapFailureResponse(res, 422, msg, null);
-    }
-
+    if (error) throw new Error(msg);
     const msisdn = msg;
-    // getting the user details based on the msisdn
-    const user = await User.findOne({ msisdn: msisdn }).exec();
+
+    const user = await UserRepo.getUserByMsisdn(msisdn);
     if (user == null)
-      return wrapFailureResponse(
-        res,
-        404,
-        "You do not have an account, please consider siging up",
-        null
-      );
+      throw new Error("You do not have an account, please consider siging up");
 
-    // compare pins
     if (request.pin != request.confirm_pin)
-      return wrapFailureResponse(res, 500, "Pins do not match", null);
+      throw new Error("Pins do not match");
 
-    // hash pin and store in th database
     const hashedPin = bcrypt.hashSync(request.pin, bcrypt.genSaltSync(10));
 
-    const resp = await User.findOneAndUpdate(
-      { _id: user._id },
-      {
-        isPinSet: true,
-        password: hashedPin,
-        activated: true,
-        update_at: new Date(),
-      },
-      {
-        new: true,
-        upsert: true,
-        rawResult: true, // Return the raw result from the MongoDB driver
-      }
-    );
-
+    const resp = await UserRepo.activateUserAccount(hashedPin, user);
     if (!resp.value.isPinSet)
-      return wrapFailureResponse(
-        res,
-        200,
-        "Could not update OTP confirmation status",
-        null
-      );
+      throw new Error("Could not update OTP confirmation status");
 
-    // TODO generate and store token
-    // expires in one day
     const token = await signJwtWebToken(user, client);
-
+    
     wrapSuccessResponse(
       res,
       200,
