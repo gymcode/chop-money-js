@@ -203,10 +203,10 @@ exports.disburseMoney = async (req, res) => {
       transactionId,
       user,
       paymentRequest,
-      request,
       true,
       "",
-      request.accountId
+      request.accountId,
+      request.amount
     );
 
     if (paymentAuditResponse == null)
@@ -236,16 +236,17 @@ exports.disburseMoney = async (req, res) => {
 exports.paymentResponse = async (req, res) => {
   try {
     console.log(`response from the call back ${req.body}`);
+    console.log(`response from the call back ${req.body.foreignID}`);
     const request = req.body;
 
     // update the payment details and get the transactionId and update the transaction using the trasactionId
     const payment = await PaymentRepo.getPaymentByTransactionId(
-      request.foreighID
+      request.foreignID
     );
     console.log(`payment details from the database ${payment}`);
 
     if (payment == null)
-      throw new Error(`No transaction found with the ${request.foreighID}`);
+      throw new Error(`No transaction found with the ${request.foreignID}`);
 
     const status = request.status == "success" ? "SUCCESS" : "FAILURE";
     const paymentStatus = request.status == "success" ? true : false;
@@ -268,6 +269,8 @@ exports.paymentResponse = async (req, res) => {
 
       if (createdTransactionHistory != null && request.status == "success") {
         const account = await AccountRepo.getAccount(payment.account);
+
+        console.log("******** acc" + account + "amt *********");
 
         let amountCashedOut = account.amountCashedOut;
         amountCashedOut += payment.amount;
@@ -292,7 +295,7 @@ exports.paymentResponse = async (req, res) => {
       }
     }
 
-    if (request.status == "success" && payment.isDisbursement) {
+    if (request.status == "success" && !payment.isDisbursement) {
       // update the account details
       const updateAccountPayment = await AccountRepo.updateAccountPayment(
         payment.account
@@ -354,7 +357,7 @@ exports.getAccount = async (req, res) => {
 
     if (account == null)
       return wrapFailureResponse(res, 404, "Account cannot be found");
-
+    
     const transactions = account.transactions;
 
     wrapSuccessResponse(res, 200, transactions, null, token);
@@ -437,10 +440,10 @@ async function makePayment(request, user, userAccountId) {
       transactionId,
       user,
       paymentRequest,
-      request,
       false,
       paymentResponse.response.data,
-      userAccountId
+      userAccountId,
+      request.totalPayAmount
     );
 
     if (paymentAuditResponse == null)

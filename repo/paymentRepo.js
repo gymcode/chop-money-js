@@ -4,16 +4,16 @@ async function addPayment(
   transactionId,
   user,
   paymentRequest,
-  request,
   isDisbursementStatus,
   paymentResponse,
-  accountId
+  accountId,
+  amount
 ) {
   const paymentAuditRequest = new Payment({
     transactionId: transactionId,
     paymentRequest: JSON.stringify(paymentRequest),
     paymentResponse: JSON.stringify(paymentResponse),
-    amount: request.totalPayAmount,
+    amount: amount,
     user: user._id,
     isDisbursement: isDisbursementStatus,
     account: accountId,
