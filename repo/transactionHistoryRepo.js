@@ -10,3 +10,6 @@ async function addTransactionHistory(payment, status) {
   return await transactionHistoryRequest.save();
 }
 
+module.exports = {
+  addTransactionHistory
+}

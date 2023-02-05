@@ -102,5 +102,6 @@ module.exports = {
   updateOTPIsOtpConfirmed,
   updateUserDetails,
   resetUserAccount,
-  activateUserAccount
+  activateUserAccount,
+  addAccountsToUser
 }

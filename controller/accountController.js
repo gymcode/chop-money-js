@@ -1,8 +1,5 @@
-const Account = require("../models/Account");
 const { CountryMsisdnValidation } = require("../utils/msisdnValidation");
 const Transaction = require("../models/Transaction");
-const Payment = require("../models/Payment");
-const TransactionHistory = require("../models/TransactionHistory");
 const {
   wrapFailureResponse,
   wrapSuccessResponse,
@@ -15,6 +12,11 @@ const {
 const Generate = require("../utils/generateRandomID");
 const JuniPayPayment = require("../config/juniPay");
 const bcrypt = require("bcryptjs");
+const AccountRepo = require("../repo/accountRepo");
+const UserRepo = require("../repo/userRepo");
+const PaymentRepo = require("../repo/paymentRepo");
+const TransactionHistoryRepo = require("../repo/transactionHistoryRepo");
+const TransactionRepo = require("../repo/transactionRepo")
 
 const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
 const disbursementUrl = process.env.JUNI_PAY_DISBURSEMENT_ENDPOINT;
@@ -30,8 +32,6 @@ exports.createAccount = async (req, res) => {
 
     if (user == null) throw new Error("User not found");
 
-    let beneficiaryContact = "";
-    // check the status of is beneficiary
     if (request.isBeneficiary) {
       const { error, msg } = CountryMsisdnValidation(
         request.beneficiaryContact,
@@ -65,31 +65,12 @@ exports.createAccount = async (req, res) => {
     let endDate =
       request.endDate == "" ? getCurrentDateTime(totalHours) : request.endDate;
 
-    // create account for user
-    const accountInput = new Account({
-      chopMoneyOwner: request.chopMoneyOwner,
-      isBeneficiary: request.isBeneficiary,
-      beneficiaryContact: request.beneficiaryContact,
-      beneficiaryName: request.beneficiaryName,
-      ownerContact: user.msisdn,
-      ownerName: user.username,
-      payFrequency: request.payFrequency,
-      payFrequencyAmount: request.payFrequencyAmount,
-      startDate: request.startDate,
-      endDate: endDate,
-      payTime: request.payTime,
-      totalPayAmount: request.totalPayAmount,
-      user: user._id,
-    });
-
-    const accountResponse = await accountInput.save();
-    if (accountResponse == null) throw new Error("Could not insert");
+    const createdAccount = await AccountRepo.addAccount(request, user, endDate);
+    if (createdAccount == null) throw new Error("Could not insert");
 
     // update the user data with the account details
-    user.accounts.push(accountResponse._id);
-    user.save();
+    UserRepo.addAccountsToUser(user, createdAccount);
 
-    // get the difference between the dates
     const days = diff_Days_Weeks(request.startDate, endDate);
     const weeks = diff_Days_Weeks(request.startDate, endDate, 7);
     const biWeeks = diff_Days_Weeks(request.startDate, endDate, 14);
@@ -103,7 +84,7 @@ exports.createAccount = async (req, res) => {
           days,
           request.payFrequencyAmount,
           1,
-          accountInput._id
+          createdAccount._id
         );
         break;
 
@@ -114,7 +95,7 @@ exports.createAccount = async (req, res) => {
           weeks,
           request.payFrequencyAmount,
           7,
-          accountInput._id
+          createdAccount._id
         );
         break;
 
@@ -125,38 +106,41 @@ exports.createAccount = async (req, res) => {
           biWeeks,
           request.payFrequencyAmount,
           14,
-          accountInput._id
+          createdAccount._id
         );
         break;
 
       default:
-        console.log("it got here");
-        break;
+        throw new Error("This pay frequency does not exist")
     }
 
     const paymentResponse = await makePayment(
       request,
       user,
-      accountResponse._id
+      createdAccount._id
     );
-    console.log(paymentResponse);
+
     if (paymentResponse.code != "00") throw new Error(paymentResponse.response);
 
-    const savedTransactions = await Transaction.insertMany(objectArr);
-    if (savedTransactions == null)
+    const createdTransaction = await TransactionRepo.addTransactions(objectArr)
+    if (createdTransaction == null)
       throw new Error("Could not insert into the transaction table");
 
-    savedTransactions.map(({ _id }) => {
-      accountResponse.transactions.push(_id);
-    });
-
-    const updatedAccount = accountResponse.save();
+    const updatedAccount = AccountRepo.addTransactionsToAccounts(
+      createdTransaction,
+      createdAccount
+    );
     if (updatedAccount == null)
       throw new Error("Could not update user's account");
 
-    const response = [paymentResponse.response, accountResponse]
-    wrapSuccessResponse(res, 200, response, null, token);
+    const responseObject = {
+      payment: paymentResponse.response,
+      account: createdAccount
+    }
+
+    wrapSuccessResponse(res, 200, responseObject, null, token);
   } catch (error) {
+    console.log(error)
     return wrapFailureResponse(res, 500, error.message, error);
   }
 };
@@ -164,16 +148,12 @@ exports.createAccount = async (req, res) => {
 exports.disburseMoney = async (req, res) => {
   try {
     const { user, token } = res.locals.user_info;
-
-    if (user == null)
-      return wrapFailureResponse(res, 404, "User not found", null);
+    if (user == null) throw new Error("User not found")
 
     const request = req.body;
 
     // chech if the account is for a beneficiary or main user
-    const account = await Account.findById({
-      _id: request.accountId,
-    }).exec();
+    const account = await AccountRepo.getAccount(request.accountId);
 
     if (account == null) throw new Error("Account does not exist");
 
@@ -200,7 +180,7 @@ exports.disburseMoney = async (req, res) => {
       receiver = user.username;
       receiver_phone = user.msisdn;
     }
-    console.log(account)
+
     const transactionId = Math.floor(
       1000000000000 + Math.random() * 9000000000000
     );
@@ -219,18 +199,18 @@ exports.disburseMoney = async (req, res) => {
         "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
 
-    console.log(paymentRequest)
+    const paymentAuditResponse = await PaymentRepo.addPayment(
+      transactionId,
+      user,
+      paymentRequest,
+      request,
+      true,
+      "",
+      request.accountId
+    );
 
-    const paymentAudit = new Payment({
-      transactionId: transactionId,
-      paymentRequest: JSON.stringify(paymentRequest),
-      paymentResponse: "",
-      amount: request.totalPayAmount,
-      user: user._id,
-      isDisbursement: true,
-      account: request.accountId,
-    });
-    paymentAudit.save(paymentAudit);
+    if (paymentAuditResponse == null)
+      throw new Error("Could not save payment audit");
 
     const paymentResponse = await JuniPayPayment(
       paymentRequest,
@@ -248,20 +228,20 @@ exports.disburseMoney = async (req, res) => {
       token
     );
   } catch (error) {
-    console.error(error)
+    console.error(error);
     return wrapFailureResponse(res, 500, error.message, error);
   }
 };
 
 exports.paymentResponse = async (req, res) => {
   try {
-    console.log(req.body);
+    console.log(`response from the call back ${req.body}`);
     const request = req.body;
 
     // update the payment details and get the transactionId and update the transaction using the trasactionId
-    const payment = await Payment.findOne({
-      transactionId: request.foreignID,
-    }).exec();
+    const payment = await PaymentRepo.getPaymentByTransactionId(
+      request.foreighID
+    );
     console.log(`payment details from the database ${payment}`);
 
     if (payment == null)
@@ -271,75 +251,53 @@ exports.paymentResponse = async (req, res) => {
     const paymentStatus = request.status == "success" ? true : false;
 
     // update the payment details
-    const updatedPayment = await Payment.updateOne(
-      { _id: payment._id },
-      {
-        updateAt: new Date(),
-        statusDescription: status,
-        paymentResponse: JSON.stringify(req.body),
-        isPaymentSuccessful: paymentStatus,
-      },
-      {
-        new: true,
-        upsert: true,
-        rawResult: true, // Return the raw result from the MongoDB driver
-      }
+    const updatedPayment = await PaymentRepo.updatePayment(
+      status,
+      payment._id,
+      request,
+      paymentStatus
     );
+    console.log(`updated payment responpse ${updatedPayment}`);
 
     if (payment.isDisbursement) {
-      // store
-      const transactionHistory = new TransactionHistory({
-        transactionAmount: payment.amount,
-        account: payment.account,
-        status: status,
-      });
+      const createdTransactionHistory =
+        await TransactionHistoryRepo.addTransactionHistory(payment, status);
+      console.log(
+        "******** cre" + createdTransactionHistory + "his **********"
+      );
 
-      const savedTransactionHistory = await transactionHistory.save();
-      console.log("********" + savedTransactionHistory + "**********");
+      if (createdTransactionHistory != null && request.status == "success") {
+        const account = await AccountRepo.getAccount(payment.account);
 
-      if (savedTransactionHistory != null && request.status == "success") {
-        // update the amount cashed out
-        // get the account
-        const account = Account.findById({ _id: payment.account }).exec();
         let amountCashedOut = account.amountCashedOut;
-        amountCashedOut += amountCashedOut + payment.amount;
+        amountCashedOut += payment.amount;
 
-        // reduce the currentAvailable amount
         let currentAmountAvailable =
           account.availableAmountToCashOut - payment.amount;
 
-        const updateAccount = await Transaction.updateOne(
-          { _id: account._id },
-          {
-            updateAt: new Date(),
-            availableAmountToCashOut: currentAmountAvailable,
-            amountCashedOut: amountCashedOut,
-          },
-          {
-            new: true,
-            upsert: true,
-            rawResult: true, // Return the raw result from the MongoDB driver
-          }
+        const updateAccountAmount = await AccountRepo.updateAccountAmounts(
+          currentAmountAvailable,
+          amountCashedOut,
+          account._id
         );
+        console.log("******** up" + updateAccountAmount + "amt *********");
 
-        console.log("********" + currentAmountAvailable + amountCashedOut + "**********");
+        console.log(
+          "********" +
+            currentAmountAvailable +
+            " " +
+            amountCashedOut +
+            "**********"
+        );
       }
     }
 
     if (request.status == "success" && payment.isDisbursement) {
       // update the account details
-      await Account.updateOne(
-        { _id: payment.account },
-        {
-          updateAt: new Date(),
-          isPaymentMade: true,
-        },
-        {
-          new: true,
-          upsert: true,
-          rawResult: true, // Return the raw result from the MongoDB driver
-        }
+      const updateAccountPayment = await AccountRepo.updateAccountPayment(
+        payment.account
       );
+      console.log("********" + updateAccountPayment + "**********");
     }
 
     return wrapSuccessResponse(res, 200, "success", null);
@@ -353,18 +311,16 @@ exports.topUp = async (req, res) => {
   try {
     const { user, token } = res.locals.user_info;
 
-    if (user == null)
-      return wrapFailureResponse(res, 404, "User not found", null);
+    if (user == null) throw new Error("User not found")
 
     const request = req.body;
 
-    // get the account
-    const account = Account.find({ id: request.accountId }).exec();
+    const account = await AccountRepo.getAccount(request.accountId);
     if (account != null) throw new Error("Account does not exist");
 
     if (account.startDate < new Date())
       throw new Error(
-        "Oops sorry your the time to start receiving money has started yet there's no cash!!!"
+        "Oops sorry your the time to start receiving money has started yet there's no cash!!!. Your account will be terminated soon"
       );
 
     const paymentResponse = await makePayment(res, request, user);
@@ -392,11 +348,9 @@ exports.getAccount = async (req, res) => {
     if (user == null)
       return wrapFailureResponse(res, 404, "User not found", null);
 
-    // getting the account details where the ID is equal to the ID of the account in the database
-    const account = await Account.findById({ _id: params.accountId })
-      .populate("transactions")
-      .exec();
-    console.log(account);
+    const account = await AccountRepo.getPopulatedTransactionsAccount(
+      params.accountId
+    );
 
     if (account == null)
       return wrapFailureResponse(res, 404, "Account cannot be found");
@@ -412,15 +366,13 @@ exports.getAccount = async (req, res) => {
 exports.getAccountsPerUser = async (req, res) => {
   try {
     const { user, token } = res.locals.user_info;
-    console.log(`here we have the user details ${user}`);
 
     if (user == null)
       return wrapFailureResponse(res, 404, "User not found", null);
 
-    // getting the account details where the ID is equal to the ID of the account in the database
-    const account = await Account.find({ user: user._id })
-      .populate("transactions")
-      .exec();
+    const account = await AccountRepo.getPopulatedTransactionAccountByUserId(
+      user._id
+    );
     if (account == null)
       return wrapFailureResponse(res, 404, "Account cannot be found");
 
@@ -481,16 +433,18 @@ async function makePayment(request, user, userAccountId) {
     if (paymentResponse.code != "00")
       throw new Error(paymentResponse.response.message);
 
-    const paymentAudit = new Payment({
-      transactionId: transactionId,
-      paymentRequest: JSON.stringify(paymentRequest),
-      paymentResponse: JSON.stringify(paymentResponse.response.data),
-      amount: request.totalPayAmount,
-      user: user._id,
-      isDisbursement: false,
-      account: userAccountId,
-    });
-    paymentAudit.save(paymentAudit);
+    const paymentAuditResponse = await PaymentRepo.addPayment(
+      transactionId,
+      user,
+      paymentRequest,
+      request,
+      false,
+      paymentResponse.response.data,
+      userAccountId
+    );
+
+    if (paymentAuditResponse == null)
+      throw new Error("Could not save payment audit");
 
     return { code: "00", response: paymentResponse.response.data };
   } catch (error) {

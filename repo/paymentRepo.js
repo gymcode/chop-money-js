@@ -5,33 +5,35 @@ async function addPayment(
   user,
   paymentRequest,
   request,
-  isDisbursementStatus
+  isDisbursementStatus,
+  paymentResponse,
+  accountId
 ) {
-  const paymentRequest = new Payment({
+  const paymentAuditRequest = new Payment({
     transactionId: transactionId,
     paymentRequest: JSON.stringify(paymentRequest),
-    paymentResponse: "",
+    paymentResponse: JSON.stringify(paymentResponse),
     amount: request.totalPayAmount,
     user: user._id,
     isDisbursement: isDisbursementStatus,
-    account: request.accountId,
+    account: accountId,
   });
-  return await paymentRequest.save();
+  return await paymentAuditRequest.save();
 }
 
-async function getPaymentByTransactionId(request) {
+async function getPaymentByTransactionId(foreignID) {
   return await Payment.findOne({
-    transactionId: request.foreignID,
+    transactionId: foreignID,
   }).exec();
 }
 
-async function updatePayment(status, payment, req, paymentStatus){
+async function updatePayment(status, paymentId, req, paymentStatus) {
   return await Payment.updateOne(
-    { _id: payment._id },
+    { _id: paymentId },
     {
       updateAt: new Date(),
       statusDescription: status,
-      paymentResponse: JSON.stringify(req.body),
+      paymentResponse: JSON.stringify(req),
       isPaymentSuccessful: paymentStatus,
     },
     {
@@ -41,3 +43,9 @@ async function updatePayment(status, payment, req, paymentStatus){
     }
   );
 }
+
+module.exports = {
+  addPayment,
+  getPaymentByTransactionId,
+  updatePayment,
+};

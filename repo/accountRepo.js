@@ -26,9 +26,19 @@ async function getAccount(accountId) {
   }).exec();
 }
 
+async function getPopulatedTransactionsAccount(accountId) {
+    return await Account.findById({
+      _id: accountId,
+    }).populate("transactions").exec();
+  }
+
+async function getPopulatedTransactionAccountByUserId(userId) {
+  return await Account.find({ user: userId }).populate("transactions").exec();
+}
+
 function addTransactionsToAccounts(savedTransactions, account) {
   savedTransactions.map(({ _id }) => {
-    accountResponse.transactions.push(_id);
+    account.transactions.push(_id);
   });
   return account.save();
 }
@@ -48,7 +58,7 @@ async function updateAccountAmounts(
     {
       new: true,
       upsert: true,
-      rawResult: true, // Return the raw result from the MongoDB driver
+      rawResult: true,
     }
   );
 }
@@ -63,7 +73,17 @@ async function updateAccountPayment(accountId) {
     {
       new: true,
       upsert: true,
-      rawResult: true, // Return the raw result from the MongoDB driver
+      rawResult: true,
     }
   );
 }
+
+module.exports = {
+  addAccount,
+  addTransactionsToAccounts,
+  updateAccountAmounts,
+  updateAccountPayment,
+  getAccount,
+  getPopulatedTransactionAccountByUserId,
+  getPopulatedTransactionsAccount
+};

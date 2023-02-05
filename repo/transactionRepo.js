@@ -4,4 +4,6 @@ async function addTransactions(objectArr) {
   return await Transaction.insertMany(objectArr);
 }
 
-
+module.exports = {
+  addTransactions
+}
