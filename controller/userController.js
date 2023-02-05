@@ -11,7 +11,6 @@ const { NaloSendSms } = require("../config/sms");
 const JuniPayPayment = require("../config/juniPay");
 
 // user model
-const User = require("../models/User");
 const UserRepo = require("../repo/userRepo");
 const generateOtp = require("../utils/generateOtp");
 const _ = require("lodash");

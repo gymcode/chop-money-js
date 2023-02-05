@@ -173,7 +173,9 @@ exports.disburseMoney = async (req, res) => {
     // chech if the account is for a beneficiary or main user
     const account = await Account.findById({
       _id: request.accountId,
-    });
+    }).exec();
+
+    if (account == null) throw new Error("Account does not exist");
 
     // check if the user can withdraw that amount of money or not
     if (request.amount > account.availableAmountToCashOut)
@@ -188,8 +190,6 @@ exports.disburseMoney = async (req, res) => {
 
     if (!pinConfirmationStatus)
       throw new Error("Wrong password. Please try again.");
-
-    if (account == null) throw new Error("Account does not exist");
 
     let receiver_phone = "";
     let receiver = "";

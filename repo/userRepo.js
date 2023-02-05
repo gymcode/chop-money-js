@@ -89,6 +89,11 @@ const User = require("../models/User");
   );
 }
 
+function addAccountsToUser(user, accountResponse){
+    user.accounts.push(accountResponse._id);
+    user.save();
+  }
+
 
 module.exports = {
   addUser,
