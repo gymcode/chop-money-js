@@ -319,21 +319,27 @@ exports.topUp = async (req, res) => {
     const request = req.body;
 
     const account = await AccountRepo.getAccount(request.accountId);
-    if (account != null) throw new Error("Account does not exist");
+    console.log(account)
+    if (account == null) throw new Error("Account does not exist");
 
-    if (account.startDate < new Date())
+    if (account.startDate > new Date())
       throw new Error(
         "Oops sorry your the time to start receiving money has started yet there's no cash!!!. Your account will be terminated soon"
       );
 
-    const paymentResponse = await makePayment(res, request, user);
+    const paymentResponse = await makePayment(request, user, account._id);
     console.log(paymentResponse);
     if (paymentResponse.code != "00") throw new Error(paymentResponse.response);
+
+    const responseObject = {
+      payment: paymentResponse.response,
+      account: account
+    }
 
     return wrapSuccessResponse(
       res,
       200,
-      paymentResponse.response.data,
+      responseObject,
       null,
       token
     );

@@ -19,8 +19,7 @@ const User = require("../models/User");
  async function getPopulatedUserDetailsByMsisdn(msisdn) {
   return await User.findOne({ msisdn: msisdn })
     .populate({
-      path: "accounts",
-      populate: { path: "transactions" },
+      path: "accounts"
     })
     .exec();
 }

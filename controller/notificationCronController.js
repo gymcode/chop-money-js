@@ -21,7 +21,7 @@ async function CronNotificatioController() {
         let currentAmountAvailable =
           transaction.account.availableAmountToCashOut;
         const transactionAmount = transaction.transactionAmount;
-        currentAmountAvailable += currentAmountAvailable + transactionAmount;
+        currentAmountAvailable += transactionAmount;
 
         // updating the user's account with the new amount
         const updatedAccount = await Account.updateOne(
