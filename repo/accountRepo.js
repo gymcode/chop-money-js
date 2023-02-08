@@ -38,7 +38,7 @@ async function getPopulatedTransactionAccountByUserId(userId) {
 
 function addTransactionsToAccounts(savedTransactions, account) {
   savedTransactions.map(({ _id }) => {
-    account.transactions.push(_id);
+    account .transactions.push(_id);
   });
   return account.save();
 }
