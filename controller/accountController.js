@@ -187,7 +187,7 @@ exports.disburseMoney = async (req, res) => {
 
     const paymentRequest = {
       amount: request.amount,
-      provider: request.provider,
+      provider: user.provider,
       phoneNumber: receiver_phone,
       receiver_phone: process.env.JUNI_PAY_SENDER_MSISDN,
       channel: "mobile_money",
@@ -427,7 +427,7 @@ async function makePayment(request, user, userAccountId) {
     const paymentRequest = {
       amount: request.totalPayAmount,
       tot_amnt: request.totalPayAmount,
-      provider: request.provider,
+      provider: user.provider,
       phoneNumber: user.msisdn,
       channel: "mobile_money",
       senderEmail: request.email,

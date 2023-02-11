@@ -12,10 +12,10 @@ async function CronNotificatioController() {
     })
       .populate("account")
       .exec();
-
+    // console.log(transactions)
     transactions.forEach(async(transaction) => {
       // console.log(transaction);
-      if (transaction.createdAt == new Date()) {
+      if (transaction.date.toLocaleDateString() == new Date().toLocaleDateString()) {
         // we need to make this money available to the user and set the isActive to false
         //  we need to get the
         let currentAmountAvailable =

@@ -65,8 +65,7 @@ exports.userRegistration = async (req, res) => {
 
     if (user == null) throw new Error("Could not insert in the database");
 
-    // const code = GenerateOTP();
-    const code = "0123";
+    const code = GenerateOTP();
     console.log(code);
     const codeHash = bcrypt.hashSync(`${code}`, bcrypt.genSaltSync(10));
     const storageKey = `${user._id}_OTP`;
@@ -79,10 +78,10 @@ exports.userRegistration = async (req, res) => {
 
     await client.set(storageKey, JSON.stringify(otpStorageObject));
 
-    // NaloSendSms(
-    //   `+${msisdn}`,
-    //   `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
-    // );
+    NaloSendSms(
+      `+${msisdn}`,
+      `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
+    );
     wrapSuccessResponse(res, 200, user);
   } catch (error) {
     console.log(error);

@@ -8,6 +8,7 @@ const User = require("../models/User");
     msisdn: msisdn,
     countryCode: request.countryCode,
     isoCode: request.isoCode,
+    provider: request.provider
   });
   return await userRequest.save();
 }

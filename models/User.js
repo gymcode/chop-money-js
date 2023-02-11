@@ -5,6 +5,7 @@ const userSchema = new Schema({
     username: {type: String, min: 3, required: true},
     firstName: String,
     otherNames: String,
+    provider: String,
     msisdn: {type: String, min: 9, max: 14, required: true},
     password: String,
     countryCode: {type: String, uppercase: true, default: "GH"},
