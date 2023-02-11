@@ -14,8 +14,9 @@ async function CronNotificatioController() {
       .exec();
     // console.log(transactions)
     transactions.forEach(async(transaction) => {
-      // console.log(transaction);
+      // console.log(transaction._id);
       if (transaction.date.toLocaleDateString() == new Date().toLocaleDateString()) {
+        console.log(`running an update for transactions ${transaction._id}`)
         // we need to make this money available to the user and set the isActive to false
         //  we need to get the
         let currentAmountAvailable =
@@ -23,6 +24,7 @@ async function CronNotificatioController() {
         const transactionAmount = transaction.transactionAmount;
         currentAmountAvailable += transactionAmount;
 
+        // console.log(`here we go ${currentAmountAvailable}`)
         // updating the user's account with the new amount
         const updatedAccount = await Account.updateOne(
           { _id: transaction.account._id },
@@ -37,7 +39,9 @@ async function CronNotificatioController() {
           }
         );
 
-        if (updatedAccount.value == null) throw new Error("Could not update the user account")
+        console.log(`here we go ${JSON.stringify(updatedAccount)}`)
+
+        // if (updatedAccount.value == null) throw new Error("Could not update the user account")
 
         // update the user's transaction
         const updateTransaction = await Transaction.updateOne(
@@ -52,38 +56,16 @@ async function CronNotificatioController() {
             rawResult: true, // Return the raw result from the MongoDB driver
           }
         );
+        console.log(`updating ${updateTransaction}`)
 
-        if (updateTransaction.value == null) throw new Error("Could not update the user account")
+        // if (updateTransaction.value == null) throw new Error("Could not update the user account")
 
         // sending push notifications to the users 
       }
     });
-  } catch (error) {}
+  } catch (error) {
+    console.log(error)
+  }
 }
 
-  // function removeDuplicates(array){
-  //   const filteredArray = array.filter((item, index)=>{
-  //       return array.indexOf(item) == index
-  //   })
-  //   return filteredArray
-  // }
-
-  // function climbingLeaderboard(ranked, player) {
-  //   // Write your code here
-  //   ranked = removeDuplicates(ranked)
-  //   player = player.reverse()
-  //   console.log(player)
-  //   let j =0;
-    
-  //   let playerRanks = []
-  //   for (let i = 0; i<player.length; i++){
-  //       for(j; j<ranked.length; j++){
-  //           if(player[i] < ranked[j]){
-  //               j += 1 
-  //               console.log(j)     
-  //           }
-  //       }
-  //   }
-  //   console.log(j)
-  // }
 module.exports = CronNotificatioController;

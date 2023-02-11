@@ -235,7 +235,7 @@ exports.disburseMoney = async (req, res) => {
 
 exports.paymentResponse = async (req, res) => {
   try {
-    console.log(`response from the call back ${req.body}`);
+    console.log(`response from the call back ${JSON.stringify(req.body)}`);
     console.log(`response from the call back ${req.body.foreignID}`);
     const request = req.body;
 
@@ -278,12 +278,15 @@ exports.paymentResponse = async (req, res) => {
         let currentAmountAvailable =
           account.availableAmountToCashOut - payment.amount;
 
+        let remainder = account.remainder - payment.amount
+
         const updateAccountAmount = await AccountRepo.updateAccountAmounts(
           currentAmountAvailable,
           amountCashedOut,
-          account._id
+          account._id,
+          remainder
         );
-        console.log("******** up" + updateAccountAmount + "amt *********");
+        console.log("******** up" + JSON.stringify(updateAccountAmount) + "amt *********");
 
         console.log(
           "********" +

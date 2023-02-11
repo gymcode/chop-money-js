@@ -28,7 +28,7 @@ app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
 
     // run cron configuration and call 
-    cron.schedule('* * * * * *', () => {
+    cron.schedule('1 * * * * *', () => {
         // create cron controller 
         CronNotificatioController()
     });  

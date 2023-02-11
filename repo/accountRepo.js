@@ -9,6 +9,7 @@ async function addAccount(request, user, endDate) {
     ownerContact: user.msisdn,
     ownerName: user.username,
     payFrequency: request.payFrequency,
+    remainder: request.totalPayAmount,
     payFrequencyAmount: request.payFrequencyAmount,
     startDate: request.startDate,
     endDate: endDate,
@@ -46,7 +47,8 @@ function addTransactionsToAccounts(savedTransactions, account) {
 async function updateAccountAmounts(
   currentAmountAvailable,
   amountCashedOut,
-  accountId
+  accountId,
+  remainder
 ) {
   return await Account.updateOne(
     { _id: accountId },
@@ -54,6 +56,7 @@ async function updateAccountAmounts(
       updateAt: new Date(),
       availableAmountToCashOut: currentAmountAvailable,
       amountCashedOut: amountCashedOut,
+      remainder: remainder
     },
     {
       new: true,
