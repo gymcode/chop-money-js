@@ -9,7 +9,7 @@ async function addAccount(request, user, endDate) {
     ownerContact: user.msisdn,
     ownerName: user.username,
     payFrequency: request.payFrequency,
-    remainder: request.totalPayAmount,
+    remainder: request.totalPayAmount,  
     payFrequencyAmount: request.payFrequencyAmount,
     startDate: request.startDate,
     endDate: endDate,

@@ -16,7 +16,7 @@ const AccountRepo = require("../repo/accountRepo");
 const UserRepo = require("../repo/userRepo");
 const PaymentRepo = require("../repo/paymentRepo");
 const TransactionHistoryRepo = require("../repo/transactionHistoryRepo");
-const TransactionRepo = require("../repo/transactionRepo")
+const TransactionRepo = require("../repo/transactionRepo");
 
 const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
 const disbursementUrl = process.env.JUNI_PAY_DISBURSEMENT_ENDPOINT;
@@ -65,6 +65,18 @@ exports.createAccount = async (req, res) => {
     let endDate =
       request.endDate == "" ? getCurrentDateTime(totalHours) : request.endDate;
 
+    const { isValid, isBeneficiary } = accountCreationValidation(user);
+
+    if (request.isBeneficiary && isBeneficiary)
+      throw new Error(
+        "You have reached your limit for creating an account for a beneficiary"
+      );
+
+    if (!request.isBeneficiary && !isValid)
+      throw new Error(
+        "You have reached your limiit for creating a personal account"
+      );
+
     const createdAccount = await AccountRepo.addAccount(request, user, endDate);
     if (createdAccount == null) throw new Error("Could not insert");
 
@@ -111,7 +123,7 @@ exports.createAccount = async (req, res) => {
         break;
 
       default:
-        throw new Error("This pay frequency does not exist")
+        throw new Error("This pay frequency does not exist");
     }
 
     const paymentResponse = await makePayment(
@@ -122,7 +134,7 @@ exports.createAccount = async (req, res) => {
 
     if (paymentResponse.code != "00") throw new Error(paymentResponse.response);
 
-    const createdTransaction = await TransactionRepo.addTransactions(objectArr)
+    const createdTransaction = await TransactionRepo.addTransactions(objectArr);
     if (createdTransaction == null)
       throw new Error("Could not insert into the transaction table");
 
@@ -135,12 +147,12 @@ exports.createAccount = async (req, res) => {
 
     const responseObject = {
       payment: paymentResponse.response,
-      account: createdAccount
-    }
+      account: createdAccount,
+    };
 
     wrapSuccessResponse(res, 200, responseObject, null, token);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return wrapFailureResponse(res, 500, error.message, error);
   }
 };
@@ -148,7 +160,7 @@ exports.createAccount = async (req, res) => {
 exports.disburseMoney = async (req, res) => {
   try {
     const { user, token } = res.locals.user_info;
-    if (user == null) throw new Error("User not found")
+    if (user == null) throw new Error("User not found");
 
     const request = req.body;
 
@@ -278,7 +290,7 @@ exports.paymentResponse = async (req, res) => {
         let currentAmountAvailable =
           account.availableAmountToCashOut - payment.amount;
 
-        let remainder = account.remainder - payment.amount
+        let remainder = account.remainder - payment.amount;
 
         const updateAccountAmount = await AccountRepo.updateAccountAmounts(
           currentAmountAvailable,
@@ -286,7 +298,9 @@ exports.paymentResponse = async (req, res) => {
           account._id,
           remainder
         );
-        console.log("******** up" + JSON.stringify(updateAccountAmount) + "amt *********");
+        console.log(
+          "******** up" + JSON.stringify(updateAccountAmount) + "amt *********"
+        );
 
         console.log(
           "********" +
@@ -317,12 +331,12 @@ exports.topUp = async (req, res) => {
   try {
     const { user, token } = res.locals.user_info;
 
-    if (user == null) throw new Error("User not found")
+    if (user == null) throw new Error("User not found");
 
     const request = req.body;
 
     const account = await AccountRepo.getAccount(request.accountId);
-    console.log(account)
+    console.log(account);
     if (account == null) throw new Error("Account does not exist");
 
     if (account.startDate > new Date())
@@ -336,16 +350,10 @@ exports.topUp = async (req, res) => {
 
     const responseObject = {
       payment: paymentResponse.response,
-      account: account
-    }
+      account: account,
+    };
 
-    return wrapSuccessResponse(
-      res,
-      200,
-      responseObject,
-      null,
-      token
-    );
+    return wrapSuccessResponse(res, 200, responseObject, null, token);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);
   }
@@ -366,7 +374,7 @@ exports.getAccount = async (req, res) => {
 
     if (account == null)
       return wrapFailureResponse(res, 404, "Account cannot be found");
-    
+
     const transactions = account.transactions;
 
     wrapSuccessResponse(res, 200, transactions, null, token);
@@ -427,9 +435,13 @@ async function makePayment(request, user, userAccountId) {
       1000000000000 + Math.random() * 9000000000000
     );
 
+    // adding 1 percent to user payment
+    const amountPercentage = 0.01 * request.totalPayAmount;
+    const amount = request.totalPayAmount +  amountPercentage;
+
     const paymentRequest = {
-      amount: request.totalPayAmount,
-      tot_amnt: request.totalPayAmount,
+      amount: amount,
+      tot_amnt: amount,
       provider: user.provider,
       phoneNumber: user.msisdn,
       channel: "mobile_money",
@@ -462,4 +474,26 @@ async function makePayment(request, user, userAccountId) {
   } catch (error) {
     return { code: "01", response: error.message };
   }
+}
+
+function accountCreationValidation(user) {
+  let response = { isValid: true, isBeneficiary: false };
+
+  const filteredBeneficiaryAccounts = user.account.filter(
+    (account) => account.isBeneficiary == true
+  );
+
+  const filteredSelfAccounts = user.account.filter(
+    (account) => account.isBeneficiary == false
+  );
+
+  if (filteredBeneficiaryAccounts.length > 2) {
+    response = { isValid: false, isBeneficiary: true };
+  }
+
+  if (filteredSelfAccounts.length > 2) {
+    response = { isValid: false, isBeneficiary: false };
+  }
+
+  return response;
 }
