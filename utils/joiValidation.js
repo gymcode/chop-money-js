@@ -15,5 +15,6 @@ const UpdateUserSchema = Joi.object({
 })
 
 
+
 module.exports = {RegistrationSchema, UpdateUserSchema}
 
