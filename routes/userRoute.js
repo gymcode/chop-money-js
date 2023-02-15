@@ -29,6 +29,8 @@ router.put("/",userValidationMiddleware(UpdateUserSchema), isUserAuthenticated(c
 
 router.get("/user", isUserAuthenticated(client), userController.getUser)
 
+router.put("/user/player-id", userController.updatePlayerId)
+
 router.delete("/logout",isUserAuthenticated(client), userController.logOut)
 
 router.delete("/delete", isUserAuthenticated(client), userController.delete)

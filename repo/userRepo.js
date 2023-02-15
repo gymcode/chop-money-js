@@ -53,7 +53,7 @@ const User = require("../models/User");
     }
   );
 }
-
+ 
  async function updateUserDetails(request, user) {
   return await User.findOneAndUpdate(
     { _id: user._id },
@@ -71,6 +71,20 @@ const User = require("../models/User");
   );
 }
 
+async function updatePlayerID(msisdn, playerId) {
+  return await User.findOneAndUpdate(
+    { msisdn: msisdn },
+    {
+      playerId: playerId,
+      update_at: new Date(),
+    },
+    {
+      new: true,
+      upsert: true,
+      rawResult: true, 
+    }
+  );
+}
 
  async function activateUserAccount(hashedPin, user) {
   return await User.findOneAndUpdate(
@@ -103,5 +117,6 @@ module.exports = {
   updateUserDetails,
   resetUserAccount,
   activateUserAccount,
-  addAccountsToUser
+  addAccountsToUser,
+  updatePlayerID
 }

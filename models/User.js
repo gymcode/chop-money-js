@@ -19,6 +19,7 @@ const userSchema = new Schema({
     activated: {type: Boolean, default:false},
     isOtpConfirmed: {type: Boolean, default:false},
     isPinSet: {type: Boolean, default:false},
+    playerId: {type: String, default: ""},
     accounts: [{type: Schema.Types.ObjectId, ref: 'accounts'}],
     version: {type: Number, default: 1}
 }, {timestamps: true})

@@ -132,7 +132,7 @@ exports.confirmOTP = async (req, res) => {
 
     const resp = await UserRepo.updateOTPIsOtpConfirmed(user);
 
-    console.log(resp)
+    console.log(resp);
     if (!resp.value.isOtpConfirmed)
       throw new Error("Could not update OTP confirmation status");
 
@@ -333,6 +333,39 @@ exports.getUser = (req, res) => {
       _.omit(JSON.parse(JSON.stringify(user)), ["password"]),
       null,
       token
+    );
+  } catch (error) {
+    console.log(error);
+    return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
+  }
+};
+
+/*
+it should handle updating the playerID
+*/
+exports.updatePlayerId = async (req, res) => {
+  try {
+    const request = req.body;
+    const { error, msg } = CountryMsisdnValidation(
+      request.msisdn,
+      request.countryCode
+    );
+    if (error) throw new Error(msg);
+    const msisdn = msg;
+
+    const user = await UserRepo.getUserByMsisdn(msisdn);
+    if (user == null)
+      throw new Error("You do not have an account, please consider siging up");
+
+    const updatedUser = await UserRepo.updatePlayerID(msisdn, request.playerId);
+    console.log(updatedUser)
+    if (updatedUser.ok != 1) throw new Error("Could not update user playerId");
+
+    wrapSuccessResponse(
+      res,
+      200,
+      _.omit(JSON.parse(JSON.stringify(updatedUser.value)), ["password"]),
+      null,
     );
   } catch (error) {
     console.log(error);
