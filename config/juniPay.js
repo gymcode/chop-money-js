@@ -2,7 +2,6 @@ const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
-const { wrapFailureResponse } = require("../shared/response");
 
 function tokenGeneration(payload) {
   // get private key from file
