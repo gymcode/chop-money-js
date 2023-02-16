@@ -402,6 +402,26 @@ exports.getAccountsPerUser = async (req, res) => {
   }
 };
 
+exports.listAccounthistory = async (req, res) => {
+  try {
+    const params = req.params;
+    const { user, token } = res.locals.user_info;
+
+    if (user == null)
+      return wrapFailureResponse(res, 404, "User not found", null);
+
+    const transactionHistory = await TransactionHistoryRepo.listTransactionPerAccount(
+      params.accountId
+    );
+    if (transactionHistory == null)
+      return wrapFailureResponse(res, 404, "Account cannot be found");
+
+    wrapSuccessResponse(res, 200, transactionHistory, null, token);
+  } catch (error) {
+    return wrapFailureResponse(res, 500, error.message, null);
+  }
+}
+
 // function
 function transactionObject(arr, payTime, duration, transAmount, extra, accID) {
   const transactionAccountArray = [];

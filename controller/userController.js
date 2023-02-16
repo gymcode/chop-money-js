@@ -345,19 +345,12 @@ it should handle updating the playerID
 */
 exports.updatePlayerId = async (req, res) => {
   try {
+    const { user, token } = res.locals.user_info;
+
     const request = req.body;
-    const { error, msg } = CountryMsisdnValidation(
-      request.msisdn,
-      request.countryCode
-    );
-    if (error) throw new Error(msg);
-    const msisdn = msg;
+    if (user == null) throw new Error("User not found");
 
-    const user = await UserRepo.getUserByMsisdn(msisdn);
-    if (user == null)
-      throw new Error("You do not have an account, please consider siging up");
-
-    const updatedUser = await UserRepo.updatePlayerID(msisdn, request.playerId);
+    const updatedUser = await UserRepo.updatePlayerID(user.msisdn, request.playerId);
     console.log(updatedUser)
     if (updatedUser.ok != 1) throw new Error("Could not update user playerId");
 
@@ -366,6 +359,7 @@ exports.updatePlayerId = async (req, res) => {
       200,
       _.omit(JSON.parse(JSON.stringify(updatedUser.value)), ["password"]),
       null,
+      token
     );
   } catch (error) {
     console.log(error);
@@ -423,4 +417,6 @@ exports.logOut = (req, res) => {
  * @param {*} req
  * @param {*} res
  */
-exports.delete = (req, res) => {};
+exports.delete = (req, res) => {
+  
+};
