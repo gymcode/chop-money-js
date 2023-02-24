@@ -1,31 +1,32 @@
 const Transaction = require("../models/Transaction");
 const { getCurrentDateTime } = require("../utils/dateTimeHelpers");
 const Account = require("../models/Account");
+const UserRepo = require("../repo/userRepo")
 
 async function CronNotificatioController() {
   try {
     const anHourFromNow = getCurrentDateTime(20);
-    // console.log(anHourFromNow)
+
     let transactions = await Transaction.find({
       isActive: true,
       createdAt: { $lte: anHourFromNow },
     })
       .populate("account")
       .exec();
-    // console.log(transactions)
-    transactions.forEach(async(transaction) => {
+
+      transactions.forEach(async(transaction) => {
       // console.log(transaction._id);
-      if (transaction.date.toLocaleDateString() == new Date().toLocaleDateString()) {
+      const date = new Date()
+      const time = `${date.getHours()}:${date.getMinutes()}`
+
+      if (transaction.date.toLocaleDateString() == new Date().toLocaleDateString() && transaction.time == time) {
         console.log(`running an update for transactions ${transaction._id}`)
-        // we need to make this money available to the user and set the isActive to false
-        //  we need to get the
-        let currentAmountAvailable =
-          transaction.account.availableAmountToCashOut;
+
+        let currentAmountAvailable = transaction.account.availableAmountToCashOut;
+
         const transactionAmount = transaction.transactionAmount;
         currentAmountAvailable += transactionAmount;
 
-        // console.log(`here we go ${currentAmountAvailable}`)
-        // updating the user's account with the new amount
         const updatedAccount = await Account.updateOne(
           { _id: transaction.account._id },
           {
@@ -35,7 +36,7 @@ async function CronNotificatioController() {
           {
             new: true,
             upsert: true,
-            rawResult: true, // Return the raw result from the MongoDB driver
+            rawResult: true, 
           }
         );
 
@@ -53,14 +54,20 @@ async function CronNotificatioController() {
           {
             new: true,
             upsert: true,
-            rawResult: true, // Return the raw result from the MongoDB driver
+            rawResult: true, 
           }
         );
         console.log(`updating ${updateTransaction}`)
 
-        // if (updateTransaction.value == null) throw new Error("Could not update the user account")
+        const userMsisdn = updatedAccount.value.msisdn
+        const user = await UserRepo.getUserByMsisdn(userMsisdn)
 
-        // sending push notifications to the users 
+        await sendPushNotification(
+            [user.playerId], 
+            "Money Ready", 
+            "Yaaayyyy!!!, it's pay time. Cash out big time and the Lord is in control", 
+            updatedAccount.value
+        )
       }
     });
   } catch (error) {

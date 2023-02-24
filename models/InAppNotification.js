@@ -21,6 +21,6 @@ const inAppNotificationSchema = new Schema(
   { timestamps: true }
 );
 
-const model = mongoose.model("inAppNotifications", inAppNotificationSchema);
+// const model = mongoose.model("inAppNotifications", inAppNotificationSchema);
 
-module.exports = model;
+// module.exports = model;
