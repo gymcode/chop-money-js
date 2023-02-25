@@ -15,6 +15,7 @@ const UserRepo = require("../repo/userRepo");
 const generateOtp = require("../utils/generateOtp");
 const _ = require("lodash");
 const { signJwtWebToken } = require("../utils/jwt_helpers");
+const sendPushNotification = require("../config/oneSignal");
 const resolveUrl = process.env.JUNI_RESOLVE_ENDPOINT;
 
 exports.nameCheck = async (req, res) => {
@@ -321,16 +322,19 @@ exports.userLogin = async (req, res) => {
 /*
 it should handle getting a single user 
 */
-exports.getUser = (req, res) => {
+exports.getUser =async (req, res) => {
   try {
     const { user, token } = res.locals.user_info;
 
     if (user == null) throw new Error("User not found");
 
+    const resp = await sendPushNotification(["e3e6ae7d-4812-4d08-8695-1089597b7b7b"], "Test", "message", null)
+    console.log(resp)
+
     wrapSuccessResponse(
       res,
       200,
-      _.omit(JSON.parse(JSON.stringify(user)), ["password"]),
+      resp.response.data,
       null,
       token
     );
