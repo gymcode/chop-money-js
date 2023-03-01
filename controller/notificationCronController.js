@@ -63,12 +63,13 @@ async function CronNotificatioController() {
         const userMsisdn = updatedAccount.value.msisdn
         const user = await UserRepo.getUserByMsisdn(userMsisdn)
 
-        await sendPushNotification(
+        const resp = await sendPushNotification(
             [user.playerId], 
             "Money Ready", 
             "Yaaayyyy!!!, it's pay time. Cash out big time and the Lord is in control", 
-            updatedAccount.value
+            null
         )
+        console.log(resp.response.data)
       }
     });
   } catch (error) {
