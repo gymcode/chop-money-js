@@ -6,8 +6,8 @@ const sendPushNotification = require("../config/oneSignal");
 
 async function CronNotificatioController() {
   try {
-    const anHourFromNow = getCurrentDateTime(20);
-
+    const anHourFromNow = getCurrentDateTime(10);
+    console.log(anHourFromNow)
     let transactions = await Transaction.find({
       isActive: true,
       createdAt: { $lte: anHourFromNow },
@@ -21,7 +21,15 @@ async function CronNotificatioController() {
       const time = `${date.getHours()}:${date.getMinutes()}`
 
       if (transaction.date.toLocaleDateString() == new Date().toLocaleDateString() && transaction.time == time) {
+        console.log(transaction.account)
         console.log(`running an update for transactions ${transaction._id}`)
+
+        console.log(transaction.account)
+
+        if (transaction.account == null) {
+          console.log("Transaction available but account deleted!!!")
+          return
+        }
 
         let currentAmountAvailable = transaction.account.availableAmountToCashOut;
 
@@ -59,9 +67,12 @@ async function CronNotificatioController() {
           }
         );
         console.log(`updating ${updateTransaction}`)
+      
 
-        const userMsisdn = updatedAccount.value.msisdn
-        const user = await UserRepo.getUserByMsisdn(userMsisdn)
+        const msisdn = transaction.account.isBeneficiary ? transaction.account.beneficiaryContact : transaction.account.ownerContact
+        console.log(`msisdn for user ${msisdn}`)
+
+        const user = await UserRepo.getUserByMsisdn(msisdn)
 
         const resp = await sendPushNotification(
             [user.playerId], 

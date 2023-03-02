@@ -15,11 +15,11 @@ function diff_Days_Weeks(startDate, endDate, limit = 1){
     return diffDays;
 }
 
-function getCurrentDateTime(hours){
+function getCurrentDateTime(minutes){
     const currentDate = new Date()
 
-    const newMinutes = currentDate.getDay() + hours
-    currentDate.setHours(newMinutes)
+    const newMinutes = currentDate.getMinutes() + minutes
+    currentDate.setMinutes(newMinutes)
    
     return currentDate
 }

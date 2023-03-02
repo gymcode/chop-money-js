@@ -328,13 +328,13 @@ exports.getUser =async (req, res) => {
 
     if (user == null) throw new Error("User not found");
 
-    const resp = await sendPushNotification(["22a5da36-32e6-4b54-a94a-1e45b6b34315"], "Test", "message", null)
-    console.log(resp.response.data)
+    // const resp = await sendPushNotification(["22a5da36-32e6-4b54-a94a-1e45b6b34315"], "Test", "message", null)
+    // console.log(resp.response.data)
 
     wrapSuccessResponse(
       res,
       200,
-      resp.response.data,
+      _.omit(JSON.parse(JSON.stringify(user)), ["password"]),
       null,
       token
     );
@@ -381,13 +381,16 @@ exports.updateUserDetails = async (req, res) => {
     const request = req.body;
     if (user == null) throw new Error("User not found");
 
-    const resp = UserRepo.updateUserDetails(request, user);
+    const resp = await UserRepo.updateUserDetails(request, user);
+
     if (resp.ok != 1) throw new Error("Could not update user detail");
+
+    const userDetail = await UserRepo.getPopulatedUserDetailsByMsisdn(user.msisdn)
 
     wrapSuccessResponse(
       res,
       200,
-      _.omit(resp.value._doc, ["password"]),
+      _.omit(JSON.parse(JSON.stringify(userDetail)), ["password"]),
       null,
       token
     );
