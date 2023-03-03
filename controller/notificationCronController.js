@@ -18,8 +18,14 @@ async function CronNotificatioController() {
       transactions.forEach(async(transaction) => {
       // console.log(transaction._id);
       const date = new Date()
-      const time = `${date.getHours()}:${date.getMinutes()}`
-
+      const time = formattedTime(`${date.getHours()}`,`${date.getMinutes()}`)
+      console.log(time)
+      // const time = `${date.getHours()}:${date.getMinutes()}`
+      
+      console.log("this is the time :: " + time)
+      if (transaction.time == time) {
+        console.log("here you are")
+      }
       if (transaction.date.toLocaleDateString() == new Date().toLocaleDateString() && transaction.time == time) {
         console.log(transaction.account)
         console.log(`running an update for transactions ${transaction._id}`)
@@ -86,6 +92,21 @@ async function CronNotificatioController() {
   } catch (error) {
     console.log(error)
   }
+}
+
+function formattedTime(hour, minute){
+  let hourStr = hour
+  let minuteStr = minute
+
+  if(hour.length == 1){
+      hourStr = "0"+hour
+  }
+  if(minute.length < 2){
+      minuteStr = "0"+minute
+  }
+
+  return `${hourStr}:${minuteStr}`
+  
 }
 
 module.exports = CronNotificatioController;
