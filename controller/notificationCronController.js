@@ -7,7 +7,7 @@ const sendPushNotification = require("../config/oneSignal");
 async function CronNotificatioController() {
   try {
     const anHourFromNow = getCurrentDateTime(10);
-    console.log(anHourFromNow)
+    console.log(anHourFromNow);
     let transactions = await Transaction.find({
       isActive: true,
       createdAt: { $lte: anHourFromNow },
@@ -15,29 +15,34 @@ async function CronNotificatioController() {
       .populate("account")
       .exec();
 
-      transactions.forEach(async(transaction) => {
+    transactions.forEach(async (transaction) => {
       // console.log(transaction._id);
-      const date = new Date()
-      const time = formattedTime(`${date.getHours()}`,`${date.getMinutes()}`)
-      console.log(time)
+      const date = new Date();
+      const time = formattedTime(`${date.getHours()}`, `${date.getMinutes()}`);
+      console.log(time);
       // const time = `${date.getHours()}:${date.getMinutes()}`
-      
-      console.log("this is the time :: " + time)
-      if (transaction.time == time) {
-        console.log("here you are")
-      }
-      if (transaction.date.toLocaleDateString() == new Date().toLocaleDateString() && transaction.time == time) {
-        console.log(transaction.account)
-        console.log(`running an update for transactions ${transaction._id}`)
 
-        console.log(transaction.account)
+      console.log("this is the time :: " + time);
+      if (transaction.time == time) {
+        console.log("here you are");
+      }
+      if (
+        transaction.date.toLocaleDateString() ==
+          new Date().toLocaleDateString() &&
+        transaction.time == time
+      ) {
+        console.log(transaction.account);
+        console.log(`running an update for transactions ${transaction._id}`);
+
+        console.log(transaction.account);
 
         if (transaction.account == null) {
-          console.log("Transaction available but account deleted!!!")
-          return
+          console.log("Transaction available but account deleted!!!");
+          return;
         }
 
-        let currentAmountAvailable = transaction.account.availableAmountToCashOut;
+        let currentAmountAvailable =
+          transaction.account.availableAmountToCashOut;
 
         const transactionAmount = transaction.transactionAmount;
         currentAmountAvailable += transactionAmount;
@@ -51,11 +56,11 @@ async function CronNotificatioController() {
           {
             new: true,
             upsert: true,
-            rawResult: true, 
+            rawResult: true,
           }
         );
 
-        console.log(`here we go ${JSON.stringify(updatedAccount)}`)
+        console.log(`here we go ${JSON.stringify(updatedAccount)}`);
 
         // if (updatedAccount.value == null) throw new Error("Could not update the user account")
 
@@ -69,44 +74,44 @@ async function CronNotificatioController() {
           {
             new: true,
             upsert: true,
-            rawResult: true, 
+            rawResult: true,
           }
         );
-        console.log(`updating ${updateTransaction}`)
-      
+        console.log(`updating ${updateTransaction}`);
 
-        const msisdn = transaction.account.isBeneficiary ? transaction.account.beneficiaryContact : transaction.account.ownerContact
-        console.log(`msisdn for user ${msisdn}`)
+        const msisdn = transaction.account.ownerContact;
+        console.log(`msisdn for user ${msisdn}`);
 
-        const user = await UserRepo.getUserByMsisdn(msisdn)
+        const user = await UserRepo.getUserByMsisdn(msisdn);
 
-        const resp = await sendPushNotification(
-            [user.playerId], 
-            "Money Ready", 
-            "Yaaayyyy!!!, it's pay time. Cash out big time and the Lord is in control", 
+        if (user != null) {
+          const resp = await sendPushNotification(
+            [user.playerId],
+            "Money Ready",
+            "Yaaayyyy!!!, it's pay time. Cash out big time and the Lord is in control",
             null
-        )
-        console.log(resp.response.data)
+          );
+          console.log(resp.response.data);
+        }
       }
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
 }
 
-function formattedTime(hour, minute){
-  let hourStr = hour
-  let minuteStr = minute
+function formattedTime(hour, minute) {
+  let hourStr = hour;
+  let minuteStr = minute;
 
-  if(hour.length == 1){
-      hourStr = "0"+hour
+  if (hour.length == 1) {
+    hourStr = "0" + hour;
   }
-  if(minute.length < 2){
-      minuteStr = "0"+minute
+  if (minute.length < 2) {
+    minuteStr = "0" + minute;
   }
 
-  return `${hourStr}:${minuteStr}`
-  
+  return `${hourStr}:${minuteStr}`;
 }
 
 module.exports = CronNotificatioController;

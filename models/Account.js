@@ -20,6 +20,7 @@ const accountSchema = new Schema({
     availableAmountToCashOut: {type:Number, default: 0.0},
     amountCashedOut: {type:Number, default: 0.0}, 
     isPaymentMade: {type: Boolean, default: false},
+    isForcedClosed: {type: Boolean, default: false},
     version: {type: Number, default: 1}
 }, {timestamps: true})
 

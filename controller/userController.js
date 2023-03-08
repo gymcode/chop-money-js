@@ -322,14 +322,14 @@ exports.userLogin = async (req, res) => {
 /*
 it should handle getting a single user 
 */
-exports.getUser =async (req, res) => {
+exports.getUser = async (req, res) => {
   try {
     const { user, token } = res.locals.user_info;
 
     if (user == null) throw new Error("User not found");
 
-    // const resp = await sendPushNotification(["22a5da36-32e6-4b54-a94a-1e45b6b34315"], "Test", "message", null)
-    // console.log(resp.response.data)
+    const resp = await sendPushNotification(["0299d486-899c-4d30-85ed-da98e6238915"], "Test", "message", null)
+    console.log(resp.response.data)
 
     wrapSuccessResponse(
       res,
@@ -354,8 +354,11 @@ exports.updatePlayerId = async (req, res) => {
     const request = req.body;
     if (user == null) throw new Error("User not found");
 
-    const updatedUser = await UserRepo.updatePlayerID(user.msisdn, request.playerId);
-    console.log(updatedUser)
+    const updatedUser = await UserRepo.updatePlayerID(
+      user.msisdn,
+      request.playerId
+    );
+    console.log(updatedUser);
     if (updatedUser.ok != 1) throw new Error("Could not update user playerId");
 
     wrapSuccessResponse(
@@ -385,7 +388,9 @@ exports.updateUserDetails = async (req, res) => {
 
     if (resp.ok != 1) throw new Error("Could not update user detail");
 
-    const userDetail = await UserRepo.getPopulatedUserDetailsByMsisdn(user.msisdn)
+    const userDetail = await UserRepo.getPopulatedUserDetailsByMsisdn(
+      user.msisdn
+    );
 
     wrapSuccessResponse(
       res,
@@ -425,5 +430,18 @@ exports.logOut = (req, res) => {
  * @param {*} res
  */
 exports.delete = (req, res) => {
-  
+  try {
+    const { user, token } = res.locals.user_info;
+    if (user == null) throw new Error("User not found")
+
+    if(user.account != null) throw new Error("Cannot delete account due to ")
+
+    const deletedAccount = UserRepo.deleteAccount(user._id)
+
+    wrapSuccessResponse(res, 200, null, null, token)
+
+  } catch (error) {
+    console.log(error);
+    return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
+  }
 };

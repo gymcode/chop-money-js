@@ -103,6 +103,10 @@ async function updatePlayerID(msisdn, playerId) {
   );
 }
 
+async function deleteAccount(userId){
+  return await User.deleteOne({_id: userId})
+}
+
 function addAccountsToUser(user, accountResponse){
     user.accounts.push(accountResponse._id);
     user.save();
@@ -118,5 +122,6 @@ module.exports = {
   resetUserAccount,
   activateUserAccount,
   addAccountsToUser,
-  updatePlayerID
+  updatePlayerID,
+  deleteAccount
 }
