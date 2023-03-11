@@ -15,7 +15,18 @@ function diff_Days_Weeks(startDate, endDate, limit = 1){
     return diffDays;
 }
 
-function getCurrentDateTime(minutes){
+function getCurrentDateTime(hours){
+    const currentDate = new Date()
+
+    const newMinutes = currentDate.getDay() + hours
+    currentDate.setHours(newMinutes)
+
+    return currentDate
+}
+
+
+function getMinutesFromNow(minutes){
+
     const currentDate = new Date()
 
     const newMinutes = currentDate.getMinutes() + minutes
@@ -41,4 +52,5 @@ module.exports = {
     diff_Days_Weeks,
     getDate,
     getCurrentDateTime,
+    getMinutesFromNow
 }

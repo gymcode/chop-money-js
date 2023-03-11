@@ -6,7 +6,7 @@ const sendPushNotification = require("../config/oneSignal");
 
 async function CronNotificatioController() {
   try {
-    const anHourFromNow = getCurrentDateTime(10);
+    const anHourFromNow = getMinutesFromNow(10);
     console.log(anHourFromNow);
     let transactions = await Transaction.find({
       isActive: true,
@@ -19,10 +19,10 @@ async function CronNotificatioController() {
       // console.log(transaction._id);
       const date = new Date();
       const time = formattedTime(`${date.getHours()}`, `${date.getMinutes()}`);
-      console.log(time);
+      // console.log(time);
       // const time = `${date.getHours()}:${date.getMinutes()}`
 
-      console.log("this is the time :: " + time);
+      // console.log("this is the time :: " + time);
       if (transaction.time == time) {
         console.log("here you are");
       }
