@@ -499,11 +499,14 @@ async function makePayment(request, user, userAccountId) {
 function accountCreationValidation(user) {
   let response = { isValid: true, isBeneficiary: false };
 
-  const filteredBeneficiaryAccounts = user.account.filter(
+  if (user.accounts.length == 0)
+    return response
+
+  const filteredBeneficiaryAccounts = user.accounts.filter(
     (account) => account.isBeneficiary == true
   );
 
-  const filteredSelfAccounts = user.account.filter(
+  const filteredSelfAccounts = user.accounts.filter(
     (account) => account.isBeneficiary == false
   );
 
