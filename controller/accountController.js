@@ -65,17 +65,17 @@ exports.createAccount = async (req, res) => {
     let endDate =
       request.endDate == "" ? getCurrentDateTime(totalHours) : request.endDate;
 
-    // const { isValid, isBeneficiary } = accountCreationValidation(user);
+    const { isValid, isBeneficiary } = accountCreationValidation(user);
 
-    // if (request.isBeneficiary && isBeneficiary)
-    //   throw new Error(
-    //     "You have reached your limit for creating an account for a beneficiary"
-    //   );
+    if (request.isBeneficiary && isBeneficiary)
+      throw new Error(
+        "You have reached your limit for creating an account for a beneficiary"
+      );
 
-    // if (!request.isBeneficiary && !isValid)
-    //   throw new Error(
-    //     "You have reached your limiit for creating a personal account"
-    //   );
+    if (!request.isBeneficiary && !isValid)
+      throw new Error(
+        "You have reached your limiit for creating a personal account"
+      );
 
     const createdAccount = await AccountRepo.addAccount(request, user, endDate);
     if (createdAccount == null) throw new Error("Could not insert");
