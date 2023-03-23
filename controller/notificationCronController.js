@@ -16,7 +16,6 @@ async function CronNotificatioController() {
       .exec();
 
     transactions.forEach(async (transaction) => {
-      // console.log(transaction._id);
       const date = new Date();
       const time = formattedTime(`${date.getHours()}`, `${date.getMinutes()}`);
       // console.log(time);
