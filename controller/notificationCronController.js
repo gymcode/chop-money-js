@@ -21,7 +21,6 @@ async function CronNotificatioController() {
       // console.log(time);
       // const time = `${date.getHours()}:${date.getMinutes()}`
 
-      // console.log("this is the time :: " + time);
       if (transaction.time == time) {
         console.log("here you are");
       }
