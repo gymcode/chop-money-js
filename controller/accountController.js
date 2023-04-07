@@ -172,7 +172,7 @@ exports.disburseMoney = async (req, res) => {
     // check if the user can withdraw that amount of money or not
     if (request.amount > account.availableAmountToCashOut)
       throw new Error(
-        "Oops amount entered it more than the amount available for cash out"
+        "Oops amount entered is more than the amount available for cash out"
       );
 
     const pinConfirmationStatus = bcrypt.compareSync(

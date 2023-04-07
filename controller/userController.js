@@ -324,7 +324,7 @@ it should handle getting a single user
 */
 exports.getUser = async (req, res) => {
   try  {
-    const { user, token } = res.locals.user_info;k
+    const { user, token } = res.locals.user_info;
 
     if (user == null) throw new Error("User not found");
 
