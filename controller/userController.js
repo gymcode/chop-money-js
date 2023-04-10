@@ -329,7 +329,7 @@ exports.getUser = async (req, res) => {
     if (user == null) throw new Error("User not found");
 
     // const resp = await sendPushNotification(["06fbb2eb-4865-428c-8398-a148ea801158"], "Test", "message", null)
-    // console.log(resp.response.data)
+    
 
     wrapSuccessResponse(
       res,
