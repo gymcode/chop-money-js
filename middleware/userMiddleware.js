@@ -63,7 +63,6 @@ function isUserAuthenticated() {
 
       let payload = data.payload;
 
-      // use the id in the payload to get the user data
       const user = await User.findOne({ _id: payload._id })
         .populate({
           path: "accounts"
