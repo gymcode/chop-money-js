@@ -20,7 +20,6 @@ function isUserAuthenticated() {
   return async (req, res, next) => {
     try {
 
-      // getting from the headers
       const authHeader = req.headers["authorization"];
 
       if (authHeader == undefined)
