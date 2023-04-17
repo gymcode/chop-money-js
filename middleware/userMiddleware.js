@@ -1,7 +1,6 @@
 const { wrapFailureResponse } = require("../shared/response");
 const { verifySignedJwtWebToken } = require("../utils/jwt_helpers");
 const User = require("../models/User");
-const jwt = require("jsonwebtoken");
 
 function userValidationMiddleware(schema) {
   return (req, res, next) => {
