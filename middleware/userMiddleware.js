@@ -60,6 +60,7 @@ function isUserAuthenticated() {
       
 
       let payload = data.payload;
+      console.log("payload :: " + JSON.stringify(payload))
 
       const user = await User.findOne({ _id: payload._id })
         .populate({

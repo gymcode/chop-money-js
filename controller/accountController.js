@@ -1,9 +1,9 @@
 const { CountryMsisdnValidation } = require("../utils/msisdnValidation");
-const Transaction = require("../models/Transaction");
 const {
   wrapFailureResponse,
   wrapSuccessResponse,
 } = require("../shared/response");
+const { BENEFICIARY_SMS, ACCOUNT_OWNER_SMS } = require("../shared/constants");
 const {
   diff_Days_Weeks,
   getCurrentDateTime,
@@ -17,6 +17,7 @@ const UserRepo = require("../repo/userRepo");
 const PaymentRepo = require("../repo/paymentRepo");
 const TransactionHistoryRepo = require("../repo/transactionHistoryRepo");
 const TransactionRepo = require("../repo/transactionRepo");
+const { NaloSendSms } = require("../config/sms");
 
 const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
 const disbursementUrl = process.env.JUNI_PAY_DISBURSEMENT_ENDPOINT;
@@ -126,10 +127,16 @@ exports.createAccount = async (req, res) => {
         throw new Error("This pay frequency does not exist");
     }
 
+    console.log("transaction data to store ::" + JSON.stringify(objectArr));
+
     const paymentResponse = await makePayment(
       request,
       user,
       createdAccount._id
+    );
+    console.log(
+      "response from the payment to be made :: " +
+        JSON.stringify(paymentResponse)
     );
 
     if (paymentResponse.code != "00") throw new Error(paymentResponse.response);
@@ -150,6 +157,29 @@ exports.createAccount = async (req, res) => {
       account: createdAccount,
     };
 
+    if (createdAccount.isBeneficiary) {
+      const beneficiarySms = BENEFICIARY_SMS.replace(
+        "{BENE_NAME}",
+        createdAccount.beneficiaryName
+      )
+        .replace("{OWNER_NAME}", createdAccount.ownerName)
+        .replace("{AMOUNT}", createdAccount.payFrequencyAmount)
+        .replace("{TIME}", createdAccount.payTime)
+        .replace("{FREQUENCY}", createdAccount.payFrequency);
+
+      console.log("Message for beneficiary :: " + beneficiarySms);
+
+      const ownerSms = ACCOUNT_OWNER_SMS.replace(
+        "{BENE_NAME}",
+        createdAccount.beneficiaryName
+      )
+        .replace("{AMOUNT}", createdAccount.payFrequencyAmount)
+        .replace("{TIME}", createdAccount.payTime)
+        .replace("{FREQUENCY}", createdAccount.payFrequency);
+      NaloSendSms(`+${createdAccount.ownerContact}`, ownerSms);
+      NaloSendSms(`+${createdAccount.beneficiaryContact}`, beneficiarySms);
+    }
+
     wrapSuccessResponse(res, 200, responseObject, null, token);
   } catch (error) {
     console.log(error);
@@ -161,11 +191,14 @@ exports.disburseMoney = async (req, res) => {
   try {
     const { user, token } = res.locals.user_info;
     if (user == null) throw new Error("User not found");
+    console.log("user data :: " + user);
 
     const request = req.body;
+    console.log("request received :: " + JSON.stringify(request));
 
     // chech if the account is for a beneficiary or main user
     const account = await AccountRepo.getAccount(request.accountId);
+    console.log("Account using the accountId :: " + account);
 
     if (account == null) throw new Error("Account does not exist");
 
@@ -210,6 +243,10 @@ exports.disburseMoney = async (req, res) => {
       callbackUrl:
         "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
+
+    console.log(
+      "payment response from disbursement :: " + JSON.stringify(paymentRequest)
+    );
 
     const paymentAuditResponse = await PaymentRepo.addPayment(
       transactionId,
@@ -260,8 +297,10 @@ exports.paymentResponse = async (req, res) => {
     if (payment == null)
       throw new Error(`No transaction found with the ${request.foreignID}`);
 
-    const status = request.status == "success" ? "SUCCESS" : "FAILURE";
-    const paymentStatus = request.status == "success" ? true : false;
+    const status =
+      request.status == "success" || "pending" ? "SUCCESS" : "FAILURE";
+    const paymentStatus =
+      request.status == "success" || "pending" ? true : false;
 
     // update the payment details
     const updatedPayment = await PaymentRepo.updatePayment(
@@ -270,7 +309,7 @@ exports.paymentResponse = async (req, res) => {
       request,
       paymentStatus
     );
-    console.log(`updated payment responpse ${updatedPayment}`);
+    console.log(`updated payment response ${updatedPayment}`);
 
     if (payment.isDisbursement) {
       const createdTransactionHistory =
@@ -279,7 +318,7 @@ exports.paymentResponse = async (req, res) => {
         "******** cre" + createdTransactionHistory + "his **********"
       );
 
-      if (createdTransactionHistory != null && request.status == "success") {
+      if (createdTransactionHistory != null && request.status == "success" || request.status == "pending") {
         const account = await AccountRepo.getAccount(payment.account);
 
         console.log("******** acc" + account + "amt *********");
@@ -338,6 +377,9 @@ exports.topUp = async (req, res) => {
     const account = await AccountRepo.getAccount(request.accountId);
     console.log(account);
     if (account == null) throw new Error("Account does not exist");
+
+    if (account.isPaymentMade)
+      throw new Error("Payment has already been made on this account.");
 
     if (account.startDate > new Date())
       throw new Error(
@@ -410,9 +452,8 @@ exports.listAccounthistory = async (req, res) => {
     if (user == null)
       return wrapFailureResponse(res, 404, "User not found", null);
 
-    const transactionHistory = await TransactionHistoryRepo.listTransactionPerAccount(
-      params.accountId
-    );
+    const transactionHistory =
+      await TransactionHistoryRepo.listTransactionPerAccount(params.accountId);
     if (transactionHistory == null)
       return wrapFailureResponse(res, 404, "Account cannot be found");
 
@@ -420,7 +461,7 @@ exports.listAccounthistory = async (req, res) => {
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, null);
   }
-}
+};
 
 // function
 function transactionObject(arr, payTime, duration, transAmount, extra, accID) {
@@ -457,7 +498,7 @@ async function makePayment(request, user, userAccountId) {
 
     // adding 1 percent to user payment
     const amountPercentage = 0.01 * request.totalPayAmount;
-    const amount = request.totalPayAmount +  amountPercentage;
+    const amount = request.totalPayAmount + amountPercentage;
 
     const paymentRequest = {
       amount: amount,
@@ -466,13 +507,14 @@ async function makePayment(request, user, userAccountId) {
       phoneNumber: user.msisdn,
       channel: "mobile_money",
       senderEmail: request.email,
-      description: "test payment",
+      description: "Budget",
       foreignID: `${transactionId}`,
       callbackUrl:
         "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
 
     const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
+    console.log("response from juni pay :: " + paymentResponse);
 
     if (paymentResponse.code != "00")
       throw new Error(paymentResponse.response.message);
@@ -499,8 +541,7 @@ async function makePayment(request, user, userAccountId) {
 function accountCreationValidation(user) {
   let response = { isValid: true, isBeneficiary: false };
 
-  if (user.accounts.length == 0)
-    return response
+  if (user.accounts.length == 0) return response;
 
   const filteredBeneficiaryAccounts = user.accounts.filter(
     (account) => account.isBeneficiary == true

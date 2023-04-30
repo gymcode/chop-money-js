@@ -26,6 +26,7 @@ async function JuniPayPayment(data, uri, method = "POST") {
   try {
     // get token
     const token = tokenGeneration(data);
+    // console.log(token)
     const clientID = process.env.JUNI_PAY_CLIENT_ID;
 
     const headers = {
@@ -48,11 +49,14 @@ async function JuniPayPayment(data, uri, method = "POST") {
       });
     }
 
+    console.log("response from juni pay endpoints :: ", response)
     return { code: "00", response: response };
   } catch (error) {
-    // console.error(error.response.data.info);
-    return { code: "01", response: error.response.data.info };
+    console.error("error :: " + error);
+
+      return { code: "01", response: error.response.data.info };
   }
 }
 
 module.exports = JuniPayPayment;
+

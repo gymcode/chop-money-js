@@ -28,6 +28,8 @@ exports.nameCheck = async (req, res) => {
     nameCheckUrl.searchParams.set("provider", request.provider);
     nameCheckUrl.searchParams.set("phoneNumber", request.msisdn);
 
+    console.log(nameCheckUrl)
+    
     const response = await JuniPayPayment({}, nameCheckUrl.href, "GET");
     console.log(response);
     if (response.code != "00") throw new Error(response.response.message);
