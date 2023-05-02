@@ -285,7 +285,7 @@ exports.disburseMoney = async (req, res) => {
 exports.paymentResponse = async (req, res) => {
   try {
     console.log(`response from the call back ${JSON.stringify(req.body)}`);
-    console.log(`response from the call back ${req.body.foreignID}`);
+    
     const request = req.body;
 
     // update the payment details and get the transactionId and update the transaction using the trasactionId
