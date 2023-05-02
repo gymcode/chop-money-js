@@ -285,7 +285,7 @@ exports.disburseMoney = async (req, res) => {
 exports.paymentResponse = async (req, res) => {
   try {
     console.log(`response from the call back ${JSON.stringify(req.body)}`);
-    
+
     const request = req.body;
 
     // update the payment details and get the transactionId and update the transaction using the trasactionId
@@ -312,6 +312,15 @@ exports.paymentResponse = async (req, res) => {
     console.log(`updated payment response ${updatedPayment}`);
 
     if (payment.isDisbursement) {
+      // get the transaction history
+      const date = getDate(new Date())
+      console.log("current date:: ", date)
+      const transactionHistory = await TransactionHistoryRepo.getTransactionHistoryByAccId(payment.account, date)
+      
+      if (transactionHistory != null) 
+        throw new Error("Transaction history has already been fulfilled.")
+
+
       const createdTransactionHistory =
         await TransactionHistoryRepo.addTransactionHistory(payment, status);
       console.log(
@@ -400,6 +409,38 @@ exports.topUp = async (req, res) => {
     return wrapFailureResponse(res, 500, error.message, error);
   }
 };
+
+
+exports.deleteAccount = async (req, res) => {
+  try {
+    const params = req.params;
+
+    const { user, token } = res.locals.user_info;
+
+    if (user == null)
+      return wrapFailureResponse(res, 404, "User not found", null);
+
+    const account = await AccountRepo.getPopulatedTransactionsAccount(
+      params.accountId
+    );
+
+    if (account == null)
+      return wrapFailureResponse(res, 404, "Account cannot be found");
+
+    const transactions = account.transactions;
+
+    // checkk if the account is for the owner or a beneficiary 
+
+    // for owner, update the user account with delete count
+
+    // for beneficiary, disburse money to the owner and send the bene message that heshe has been kicked off
+
+    wrapSuccessResponse(res, 200, transactions, null, token);
+  } catch (error) {
+    return wrapFailureResponse(res, 500, error.message, null);
+  }
+};
+
 
 exports.getAccount = async (req, res) => {
   try {

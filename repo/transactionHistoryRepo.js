@@ -10,6 +10,14 @@ async function addTransactionHistory(payment, status) {
   return await transactionHistoryRequest.save();
 }
 
+async function getTransactionHistoryByAccId(accountId, date){
+  return await TransactionHistory.find({
+    account: accountId,
+    status: "SUCCESS",
+    createdAt: { $eq: date }
+  }).exec();
+}
+
 async function listTransactionPerAccount(accountId) {
   return await TransactionHistory.find({
     account: accountId,
@@ -18,5 +26,6 @@ async function listTransactionPerAccount(accountId) {
 
 module.exports = {
   addTransactionHistory,
-  listTransactionPerAccount
+  listTransactionPerAccount,
+  getTransactionHistoryByAccId
 }
