@@ -297,10 +297,14 @@ exports.paymentResponse = async (req, res) => {
     if (payment == null)
       throw new Error(`No transaction found with the ${request.foreignID}`);
 
+    // check if payment status is success 
+    if (payment.statusDescription == "SUCCESS" || payment.statusDescription == "FAILURE")
+      throw new Error(`Payment with foreign id :: ${request.foreignID} has already been completed.`)
+
     const status =
-      request.status == "success" || "pending" ? "SUCCESS" : "FAILURE";
+      request.status == "success" ? "SUCCESS" : "FAILURE";
     const paymentStatus =
-      request.status == "success" || "pending" ? true : false;
+      request.status == "success" ? true : false;
 
     // update the payment details
     const updatedPayment = await PaymentRepo.updatePayment(
@@ -327,7 +331,7 @@ exports.paymentResponse = async (req, res) => {
         "******** cre" + createdTransactionHistory + "his **********"
       );
 
-      if (createdTransactionHistory != null && request.status == "success" || request.status == "pending") {
+      if (createdTransactionHistory != null && request.status == "success") {
         const account = await AccountRepo.getAccount(payment.account);
 
         console.log("******** acc" + account + "amt *********");
@@ -433,7 +437,7 @@ exports.deleteAccount = async (req, res) => {
 
     // for owner, update the user account with delete count
 
-    // for beneficiary, disburse money to the owner and send the bene message that heshe has been kicked off
+    // for beneficiary, disburse money to the owner and send the bene message that he/she has been kicked off
 
     wrapSuccessResponse(res, 200, transactions, null, token);
   } catch (error) {
