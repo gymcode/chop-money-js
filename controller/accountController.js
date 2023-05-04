@@ -248,8 +248,18 @@ exports.disburseMoney = async (req, res) => {
       "payment response from disbursement :: " + JSON.stringify(paymentRequest)
     );
 
-    const paymentAuditResponse = await PaymentRepo.addPayment(
+
+    const paymentResponse = await JuniPayPayment(
+      paymentRequest,
+      disbursementUrl
+    );
+
+    if (paymentResponse.code != "00")
+      throw new Error(paymentResponse.response.message);
+
+    const paymentAuditResponse = await PaymentRepo.addPayment(      
       transactionId,
+      paymentResponse.response.trans_id,
       user,
       paymentRequest,
       true,
@@ -260,14 +270,6 @@ exports.disburseMoney = async (req, res) => {
 
     if (paymentAuditResponse == null)
       throw new Error("Could not save payment audit");
-
-    const paymentResponse = await JuniPayPayment(
-      paymentRequest,
-      disbursementUrl
-    );
-
-    if (paymentResponse.code != "00")
-      throw new Error(paymentResponse.response.message);
 
     return wrapSuccessResponse(
       res,
@@ -566,6 +568,7 @@ async function makePayment(request, user, userAccountId) {
 
     const paymentAuditResponse = await PaymentRepo.addPayment(
       transactionId,
+      paymentResponse.response.trans_id,
       user,
       paymentRequest,
       false,

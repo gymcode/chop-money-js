@@ -3,6 +3,7 @@ const {Schema} = mongoose
 
 const paymentSchema = new Schema({
     transactionId: String,
+    externalRefId: {type:String, default: ""},
     accountType: {type: String, default: "MOMO_WALLET"},
     paymentRequest: String,
     paymentResponse: String,
@@ -12,6 +13,7 @@ const paymentSchema = new Schema({
     account: {type: Schema.Types.ObjectId, ref: "accounts"},
     isDisbursement: Boolean,
     isPaymentSuccessful: {type: Boolean},
+    isActive: {type: Boolean},
     version: {type: Number, default: 1}
 }, {timestamps: true})
 

@@ -1,8 +1,16 @@
 const Transaction = require("../models/Transaction");
-const { getCurrentDateTime, getMinutesFromNow } = require("../utils/dateTimeHelpers");
+const Payment = require("../models/Payment");
+const {
+  getCurrentDateTime,
+  getMinutesFromNow,
+} = require("../utils/dateTimeHelpers");
 const Account = require("../models/Account");
 const UserRepo = require("../repo/userRepo");
+const JuniPayPayment = require("../config/juniPay");
+
 const sendPushNotification = require("../config/oneSignal");
+
+const statusCheckUrl = process.env.JUNI_STATUS_CHECK_ENDPOINT;
 
 async function CronNotificatioController() {
   try {
@@ -98,6 +106,60 @@ async function CronNotificatioController() {
   }
 }
 
+async function CronStatusCheckController() {
+  try {
+    // select all payments from db where isActive is true
+    const twoMinFromNow = getMinutesFromNow(2);
+
+    let payments = await Payment.find({
+      isActive: true,
+      statusDescription: "PENDING",
+      createdAt: { $lte: twoMinFromNow },
+    })
+      .populate("account")
+      .exec();
+
+    payments.forEach(async (payment) => {
+      if (payment.externalRefId == "") return;
+
+      const payload = {
+        transID: payment.externalRefId,
+      };
+
+      const transactionStatusCheck = await JuniPayPayment(
+        payload,
+        statusCheckUrl
+      );
+      console.log(
+        `response from juni pay status check ${transactionStatusCheck}`
+      );
+
+      if (transactionStatusCheck.code != "00")
+        throw new Error(transactionStatusCheck.response.mesaage);
+
+      if (transactionStatusCheck.response.status == "success" || transactionStatusCheck.response.status == "failed") {
+        // update that payment active status to false
+        const updatePayment = await Payment.updateOne(
+          { _id: payment._id },
+          {
+            updateAt: new Date(),
+            isActive: false,
+          },
+          {
+            new: true,
+            upsert: true,
+            rawResult: true,
+          }
+        );
+
+        console.log(`updating ${updatePayment}`);
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 function formattedTime(hour, minute) {
   let hourStr = hour;
   let minuteStr = minute;
@@ -112,4 +174,4 @@ function formattedTime(hour, minute) {
   return `${hourStr}:${minuteStr}`;
 }
 
-module.exports = CronNotificatioController;
+module.exports = { CronNotificatioController, CronStatusCheckController };

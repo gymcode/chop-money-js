@@ -3,7 +3,7 @@ const { Database_Connection } = require("./services/databaseConfig")
 const {config} = require("dotenv")
 const {BASE_URL} = require("./shared/constants")
 const cron = require('node-cron');
-const CronNotificatioController = require("./controller/notificationCronController")
+const {CronNotificatioController, CronStatusCheckController} = require("./controller/cronController")
 config()
 
 const port = process.env.PORT || "8080"
@@ -29,7 +29,10 @@ app.listen(port, () => {
 
     // run cron configuration and call 
     cron.schedule('1 * * * * *', () => {
-        // create cron controller 
         CronNotificatioController()
     });  
+
+    cron.schedule('* * * * * *', ()=>{
+        CronStatusCheckController()
+    })
 },)

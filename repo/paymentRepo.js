@@ -2,6 +2,7 @@ const Payment = require("../models/Payment");
 
 async function addPayment(
   transactionId,
+  externalRefId,
   user,
   paymentRequest,
   isDisbursementStatus,
@@ -11,6 +12,7 @@ async function addPayment(
 ) {
   const paymentAuditRequest = new Payment({
     transactionId: transactionId,
+    externalRefId: externalRefId,
     paymentRequest: JSON.stringify(paymentRequest),
     paymentResponse: JSON.stringify(paymentResponse),
     amount: amount,
