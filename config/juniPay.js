@@ -49,12 +49,12 @@ async function JuniPayPayment(data, uri, method = "POST") {
       });
     }
 
-    console.log("response from juni pay endpoints :: ", response)
+    console.log("response from juni pay endpoints :: ", response.data)
     return { code: "00", response: response };
   } catch (error) {
     console.error("error :: " + error);
 
-      return { code: "01", response: error.response.data.info };
+      return { code: "01", response: error.response };
   }
 }
 

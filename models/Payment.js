@@ -13,7 +13,7 @@ const paymentSchema = new Schema({
     account: {type: Schema.Types.ObjectId, ref: "accounts"},
     isDisbursement: Boolean,
     isPaymentSuccessful: {type: Boolean},
-    isActive: {type: Boolean},
+    isActive: {type: Boolean, default: true},
     version: {type: Number, default: 1}
 }, {timestamps: true})
 

@@ -108,6 +108,7 @@ async function CronNotificatioController() {
 
 async function CronStatusCheckController() {
   try {
+    console.log("running transaction check cron")
     // select all payments from db where isActive is true
     const twoMinFromNow = getMinutesFromNow(2);
 
@@ -118,6 +119,7 @@ async function CronStatusCheckController() {
     })
       .populate("account")
       .exec();
+    console.log("payment data :: " + payments)
 
     payments.forEach(async (payment) => {
       if (payment.externalRefId == "") return;
@@ -128,7 +130,7 @@ async function CronStatusCheckController() {
 
       const transactionStatusCheck = await JuniPayPayment(
         payload,
-        statusCheckUrl
+        "https://api.junipayments.com/checktranstatus"
       );
       console.log(
         `response from juni pay status check ${transactionStatusCheck}`

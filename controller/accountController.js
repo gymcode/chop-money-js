@@ -253,13 +253,14 @@ exports.disburseMoney = async (req, res) => {
       paymentRequest,
       disbursementUrl
     );
+    console.log("response from disbursement endpoint" + paymentResponse)
 
     if (paymentResponse.code != "00")
       throw new Error(paymentResponse.response.message);
 
     const paymentAuditResponse = await PaymentRepo.addPayment(      
       transactionId,
-      paymentResponse.response.trans_id,
+      paymentResponse.response.data.info.transID,
       user,
       paymentRequest,
       true,
@@ -303,8 +304,22 @@ exports.paymentResponse = async (req, res) => {
     if (payment.statusDescription == "SUCCESS" || payment.statusDescription == "FAILURE")
       throw new Error(`Payment with foreign id :: ${request.foreignID} has already been completed.`)
 
-    const status =
-      request.status == "success" ? "SUCCESS" : "FAILURE";
+    let status = "PENDING"
+
+    switch (request.status) {
+      case "success":
+        status = "SUCCESS"
+        break;
+      case "pending":
+        status = "PENDING"
+        break;
+    
+      default:
+        status = "FAILURE"
+        break;
+    }
+  
+    
     const paymentStatus =
       request.status == "success" ? true : false;
 
@@ -319,12 +334,12 @@ exports.paymentResponse = async (req, res) => {
 
     if (payment.isDisbursement) {
       // get the transaction history
-      const date = getDate(new Date())
-      console.log("current date:: ", date)
-      const transactionHistory = await TransactionHistoryRepo.getTransactionHistoryByAccId(payment.account, date)
+      // const date = getDate(new Date())
+      // console.log("current date:: ", date)
+      // const transactionHistory = await TransactionHistoryRepo.getTransactionHistoryByAccId(payment.account, date)
       
-      if (transactionHistory != null) 
-        throw new Error("Transaction history has already been fulfilled.")
+      // if (transactionHistory != null) 
+      //   throw new Error("Transaction history has already been fulfilled.")
 
 
       const createdTransactionHistory =
@@ -568,7 +583,7 @@ async function makePayment(request, user, userAccountId) {
 
     const paymentAuditResponse = await PaymentRepo.addPayment(
       transactionId,
-      paymentResponse.response.trans_id,
+      paymentResponse.response.data.info.transID,
       user,
       paymentRequest,
       false,
