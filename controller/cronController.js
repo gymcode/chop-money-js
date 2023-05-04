@@ -10,8 +10,6 @@ const JuniPayPayment = require("../config/juniPay");
 
 const sendPushNotification = require("../config/oneSignal");
 
-const statusCheckUrl = process.env.JUNI_STATUS_CHECK_ENDPOINT;
-
 async function CronNotificatioController() {
   try {
     const anHourFromNow = getMinutesFromNow(10);

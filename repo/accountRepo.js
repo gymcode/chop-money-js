@@ -66,6 +66,51 @@ async function updateAccountAmounts(
   );
 }
 
+async function updateAccountDeleteStatus(accountId) {
+  return await Account.updateOne(
+    { _id: accountId },
+    {
+      updateAt: new Date(),
+      isDelete: true
+    },
+    {
+      new: true,
+      upsert: true,
+      rawResult: true,
+    }
+  );
+}
+
+async function updateAccountDeleteCount(accountId, deleteCount) {
+  return await Account.updateOne(
+    { _id: accountId },
+    {
+      updateAt: new Date(),
+      isDeleteDayCount: deleteCount
+    },
+    {
+      new: true,
+      upsert: true,
+      rawResult: true,
+    }
+  );
+}
+
+async function updateAccountBeneficiary(accountId, status) {
+  return await Account.updateOne(
+    { _id: accountId },
+    {
+      updateAt: new Date(),
+      isBeneficiary: status
+    },
+    {
+      new: true,
+      upsert: true,
+      rawResult: true,
+    }
+  );
+}
+
 async function updateAccountPayment(accountId) {
   return await Account.updateOne(
     { _id: accountId },
@@ -88,5 +133,8 @@ module.exports = {
   updateAccountPayment,
   getAccount,
   getPopulatedTransactionAccountByUserId,
-  getPopulatedTransactionsAccount
+  getPopulatedTransactionsAccount,
+  updateAccountDeleteCount,
+  updateAccountDeleteStatus,
+  updateAccountBeneficiary
 };

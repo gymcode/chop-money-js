@@ -17,7 +17,9 @@ router.post("/top-up", isUserAuthenticated(client), accountController.topUp)
 
 router.post("/disburse-payment", isUserAuthenticated(client), accountController.disburseMoney)
 
-router.delete("/delete", isUserAuthenticated(client), accountController.deleteAccount)
+router.delete("/delete/:accountId", isUserAuthenticated(client), accountController.deleteAccount)
+
+router.delete("/cancel/:accountId", isUserAuthenticated(client), accountController.cancelDeleteAccount)
 
 router.post("/callback/response", accountController.paymentResponse)
 

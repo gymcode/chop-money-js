@@ -18,6 +18,7 @@ const PaymentRepo = require("../repo/paymentRepo");
 const TransactionHistoryRepo = require("../repo/transactionHistoryRepo");
 const TransactionRepo = require("../repo/transactionRepo");
 const { NaloSendSms } = require("../config/sms");
+const sendPushNotification = require("../config/oneSignal");
 
 const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
 const disbursementUrl = process.env.JUNI_PAY_DISBURSEMENT_ENDPOINT;
@@ -248,17 +249,16 @@ exports.disburseMoney = async (req, res) => {
       "payment response from disbursement :: " + JSON.stringify(paymentRequest)
     );
 
-
     const paymentResponse = await JuniPayPayment(
       paymentRequest,
       disbursementUrl
     );
-    console.log("response from disbursement endpoint" + paymentResponse)
+    console.log("response from disbursement endpoint" + paymentResponse);
 
     if (paymentResponse.code != "00")
       throw new Error(paymentResponse.response.message);
 
-    const paymentAuditResponse = await PaymentRepo.addPayment(      
+    const paymentAuditResponse = await PaymentRepo.addPayment(
       transactionId,
       paymentResponse.response.data.info.transID,
       user,
@@ -300,28 +300,31 @@ exports.paymentResponse = async (req, res) => {
     if (payment == null)
       throw new Error(`No transaction found with the ${request.foreignID}`);
 
-    // check if payment status is success 
-    if (payment.statusDescription == "SUCCESS" || payment.statusDescription == "FAILURE")
-      throw new Error(`Payment with foreign id :: ${request.foreignID} has already been completed.`)
+    // check if payment status is success
+    if (
+      payment.statusDescription == "SUCCESS" ||
+      payment.statusDescription == "FAILURE"
+    )
+      throw new Error(
+        `Payment with foreign id :: ${request.foreignID} has already been completed.`
+      );
 
-    let status = "PENDING"
+    let status = "PENDING";
 
     switch (request.status) {
       case "success":
-        status = "SUCCESS"
+        status = "SUCCESS";
         break;
       case "pending":
-        status = "PENDING"
+        status = "PENDING";
         break;
-    
+
       default:
-        status = "FAILURE"
+        status = "FAILURE";
         break;
     }
-  
-    
-    const paymentStatus =
-      request.status == "success" ? true : false;
+
+    const paymentStatus = request.status == "success" ? true : false;
 
     // update the payment details
     const updatedPayment = await PaymentRepo.updatePayment(
@@ -333,15 +336,6 @@ exports.paymentResponse = async (req, res) => {
     console.log(`updated payment response ${updatedPayment}`);
 
     if (payment.isDisbursement) {
-      // get the transaction history
-      // const date = getDate(new Date())
-      // console.log("current date:: ", date)
-      // const transactionHistory = await TransactionHistoryRepo.getTransactionHistoryByAccId(payment.account, date)
-      
-      // if (transactionHistory != null) 
-      //   throw new Error("Transaction history has already been fulfilled.")
-
-
       const createdTransactionHistory =
         await TransactionHistoryRepo.addTransactionHistory(payment, status);
       console.log(
@@ -431,7 +425,6 @@ exports.topUp = async (req, res) => {
   }
 };
 
-
 exports.deleteAccount = async (req, res) => {
   try {
     const params = req.params;
@@ -450,18 +443,45 @@ exports.deleteAccount = async (req, res) => {
 
     const transactions = account.transactions;
 
-    // checkk if the account is for the owner or a beneficiary 
+    if (account.isBeneficiary) {
+      const updateAccountBeneficiary =
+        await AccountRepo.updateAccountBeneficiary(params.accountId, false);
 
-    // for owner, update the user account with delete count
+      if (updateAccountBeneficiary.ok != 1)
+        throw new Error(
+          `Could not remove beneficiary from account :: ${params.accountId}.`
+        );
 
-    // for beneficiary, disburse money to the owner and send the bene message that he/she has been kicked off
+      // send sms to beneficiary and also send push notification to user for disabling the account
+      NaloSendSms(`+${account.beneficiaryContact}`, `Hi there, ${account.ownerName} has removed your from being a beneficairy to the account.`);
+      await sendPushNotification(
+        [user.playerId],
+        "Beneficiary Removed",
+        "Hi there, your beneficiary has been removed from the account, The account is now in your name...",
+        null
+      );
+    }
+
+    // set the account for deletion
+    const updateAccountDelete = await AccountRepo.updateAccountDeleteStatus(
+      params.accountId
+    );
+
+    if (updateAccountDelete.ok != 1)
+      throw new Error("Could not set account for deletion. Please try again.");
+
+    await sendPushNotification(
+      [user.playerId],
+      "Account deletion",
+      "Hi there, your account remainder budget will be transfered to your available amount to cash out after 48 hours",
+      null
+    );
 
     wrapSuccessResponse(res, 200, transactions, null, token);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, null);
   }
 };
-
 
 exports.getAccount = async (req, res) => {
   try {
