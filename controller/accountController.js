@@ -336,13 +336,33 @@ exports.paymentResponse = async (req, res) => {
     console.log(`updated payment response ${updatedPayment}`);
 
     if (payment.isDisbursement) {
-      const createdTransactionHistory =
-        await TransactionHistoryRepo.addTransactionHistory(payment, status);
+      // get the transaction history using the foreign id
+
+      let transactionHistory =
+        await TransactionHistoryRepo.getTransationHistoryByForeignId(
+          request.foreignID
+        );
+
+      if (transactionHistory == null) {
+        transactionHistory =
+          await TransactionHistoryRepo.addTransactionHistory(
+            payment,
+            status,
+            request.foreignID
+          );
+      }else{
+        if (paymentStatus) {
+          await TransactionHistoryRepo.updateTransactionHistoryStatus("SUCCESS")
+        }else{
+          await TransactionHistoryRepo.updateTransactionHistoryStatus("FAILURE")
+        }
+      }
+
       console.log(
-        "******** cre" + createdTransactionHistory + "his **********"
+        "******** cre" + transactionHistory + "his **********"
       );
 
-      if (createdTransactionHistory != null && request.status == "success") {
+      if (transactionHistory != null && request.status == "success") {
         const account = await AccountRepo.getAccount(payment.account);
 
         console.log("******** acc" + account + "amt *********");
@@ -453,7 +473,10 @@ exports.deleteAccount = async (req, res) => {
         );
 
       // send sms to beneficiary and also send push notification to user for disabling the account
-      NaloSendSms(`+${account.beneficiaryContact}`, `Hi there, ${account.ownerName} has removed your from being a beneficairy to the account.`);
+      NaloSendSms(
+        `+${account.beneficiaryContact}`,
+        `Hi there, ${account.ownerName} has removed your from being a beneficairy to the account.`
+      );
       await sendPushNotification(
         [user.playerId],
         "Beneficiary Removed",

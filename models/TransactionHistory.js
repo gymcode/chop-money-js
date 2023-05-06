@@ -5,6 +5,7 @@ const transactionHistorySchema = new Schema({
     transactionAmount: Number,
     account: {type: Schema.Types.ObjectId, ref: "accounts"},    
     status: String,
+    foreignId: {type: String, default: ""},
     version: {type: Number, default: 1}
 }, {timestamps: true})
 

@@ -160,6 +160,21 @@ async function CronStatusCheckController() {
   }
 }
 
+
+async function CronAccountDeletion(){
+  try {
+    console.log("running account deletion cron")
+
+    // get all accounts set for deletion
+    // check if those the delete count for those ones is more than 2 days 
+    // if it's more than or equal to 2 then take the remainder and add it to the available amount to cash out 
+    // if it's less than the 2 then increament the delete count 
+
+  } catch (error) {
+    console.log(error)
+  }
+}
+
 function formattedTime(hour, minute) {
   let hourStr = hour;
   let minuteStr = minute;
@@ -174,4 +189,4 @@ function formattedTime(hour, minute) {
   return `${hourStr}:${minuteStr}`;
 }
 
-module.exports = { CronNotificatioController, CronStatusCheckController };
+module.exports = { CronNotificatioController, CronStatusCheckController, CronAccountDeletion };

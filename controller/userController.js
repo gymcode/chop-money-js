@@ -28,8 +28,8 @@ exports.nameCheck = async (req, res) => {
     nameCheckUrl.searchParams.set("provider", request.provider);
     nameCheckUrl.searchParams.set("phoneNumber", request.msisdn);
 
-    console.log(nameCheckUrl)
-    
+    console.log(nameCheckUrl);
+
     const response = await JuniPayPayment({}, nameCheckUrl.href, "GET");
     console.log(response);
     if (response.code != "00") throw new Error(response.response.message);
@@ -325,11 +325,10 @@ exports.userLogin = async (req, res) => {
 it should handle getting a single user 
 */
 exports.getUser = async (req, res) => {
-  try  {
+  try {
     const { user, token } = res.locals.user_info;
 
     if (user == null) throw new Error("User not found");
-    
 
     wrapSuccessResponse(
       res,
@@ -432,14 +431,13 @@ exports.logOut = (req, res) => {
 exports.delete = (req, res) => {
   try {
     const { user, token } = res.locals.user_info;
-    if (user == null) throw new Error("User not found")
+    if (user == null) throw new Error("User not found");
 
-    if(user.account != null) throw new Error("Cannot delete account due to ")
+    if (user.account != null) throw new Error("Cannot delete account due to ");
 
-    const deletedAccount = UserRepo.deleteAccount(user._id)
+    const deletedAccount = UserRepo.deleteAccount(user._id);
 
-    wrapSuccessResponse(res, 200, null, null, token)
-
+    wrapSuccessResponse(res, 200, null, null, token);
   } catch (error) {
     console.log(error);
     return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
