@@ -22,23 +22,20 @@ function tokenGeneration(payload) {
   return token;
 }
 
+
 async function JuniPayPayment(data, uri, method = "POST") {
+  const token = tokenGeneration(data);
+  const clientID = process.env.JUNI_PAY_CLIENT_ID;
+
+  const headers = {
+    authorization: `Bearer ${token.trim()}`,
+    clientid: clientID,
+    "content-type": "application/json",
+  };
+
+  let response;
+
   try {
-    // get token
-    const token = tokenGeneration(data);
-    // console.log(token)
-    const clientID = process.env.JUNI_PAY_CLIENT_ID;
-
-    const headers = {
-      authorization: `Bearer ${token.trim()}`,
-      clientid: clientID,
-      "content-type": "application/json",
-    };
-
-    // console.log(data, uri);
-
-    let response;
-
     if (method === "POST") {
       response = await axios.post(uri, data, {
         headers: headers,
@@ -49,14 +46,16 @@ async function JuniPayPayment(data, uri, method = "POST") {
       });
     }
 
-    console.log("response from juni pay endpoints :: ", response.data)
     return { code: "00", response: response };
   } catch (error) {
-    console.error("error :: " + error);
-
-      return { code: "01", response: error.response };
+    if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+      // return custom error message or default value
+      return { code: "01", response: "Request timed out" };
+    } else {
+      // return error message from upstream server
+      return { code: "01", response: error.response.data };
+    }
   }
 }
 
 module.exports = JuniPayPayment;
-

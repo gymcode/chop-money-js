@@ -1,3 +1,4 @@
+const util = require('util')
 const { CountryMsisdnValidation } = require("../utils/msisdnValidation");
 const {
   wrapFailureResponse,
@@ -128,17 +129,15 @@ exports.createAccount = async (req, res) => {
         throw new Error("This pay frequency does not exist");
     }
 
-    console.log("transaction data to store ::" + JSON.stringify(objectArr));
-
     const paymentResponse = await makePayment(
       request,
       user,
       createdAccount._id
     );
-    console.log(
-      "response from the payment to be made :: " +
-        JSON.stringify(paymentResponse)
-    );
+    // console.log(
+    //   "response from the payment to be made :: " +
+    //     util.inspect(paymentResponse)
+    // );
 
     if (paymentResponse.code != "00") throw new Error(paymentResponse.response);
 
@@ -177,8 +176,14 @@ exports.createAccount = async (req, res) => {
         .replace("{AMOUNT}", createdAccount.payFrequencyAmount)
         .replace("{TIME}", createdAccount.payTime)
         .replace("{FREQUENCY}", createdAccount.payFrequency);
-      NaloSendSms(`+${createdAccount.ownerContact}`, ownerSms);
       NaloSendSms(`+${createdAccount.beneficiaryContact}`, beneficiarySms);
+
+      await sendPushNotification(
+        [createdAccount.user.playerId],
+        "Account creation",
+        ownerSms,
+        null
+      );
     }
 
     wrapSuccessResponse(res, 200, responseObject, null, token);
@@ -195,7 +200,7 @@ exports.disburseMoney = async (req, res) => {
     console.log("user data :: " + user);
 
     const request = req.body;
-    console.log("request received :: " + JSON.stringify(request));
+    console.log("request received :: " + util.inspect(request));
 
     // chech if the account is for a beneficiary or main user
     const account = await AccountRepo.getAccount(request.accountId);
@@ -246,7 +251,7 @@ exports.disburseMoney = async (req, res) => {
     };
 
     console.log(
-      "payment response from disbursement :: " + JSON.stringify(paymentRequest)
+      "payment response from disbursement :: " + util.inspect(paymentRequest)
     );
 
     const paymentResponse = await JuniPayPayment(
@@ -287,7 +292,7 @@ exports.disburseMoney = async (req, res) => {
 
 exports.paymentResponse = async (req, res) => {
   try {
-    console.log(`response from the call back ${JSON.stringify(req.body)}`);
+    console.log(`response from the call back ${util.inspect(req.body)}`);
 
     const request = req.body;
 
@@ -343,6 +348,8 @@ exports.paymentResponse = async (req, res) => {
           request.foreignID
         );
 
+      console.log("transaction history :: " + transactionHistory)
+
       if (transactionHistory == null) {
         transactionHistory =
           await TransactionHistoryRepo.addTransactionHistory(
@@ -382,7 +389,7 @@ exports.paymentResponse = async (req, res) => {
           remainder
         );
         console.log(
-          "******** up" + JSON.stringify(updateAccountAmount) + "amt *********"
+          "******** up" + util.inspect(updateAccountAmount) + "amt *********"
         );
 
         console.log(
@@ -425,7 +432,7 @@ exports.topUp = async (req, res) => {
     if (account.isPaymentMade)
       throw new Error("Payment has already been made on this account.");
 
-    if (account.startDate > new Date())
+    if (account.startDate < new Date())
       throw new Error(
         "Oops sorry your the time to start receiving money has started yet there's no cash!!!. Your account will be terminated soon"
       );
@@ -618,15 +625,16 @@ async function makePayment(request, user, userAccountId) {
         "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
 
+    console.log("initiating request to juni pay for payment");
     const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
-    console.log("response from juni pay :: " + paymentResponse);
+    console.log("response from juni pay :: " + util.inspect(paymentResponse));
 
     if (paymentResponse.code != "00")
       throw new Error(paymentResponse.response.message);
 
     const paymentAuditResponse = await PaymentRepo.addPayment(
       transactionId,
-      paymentResponse.response.data.info.transID,
+      paymentResponse.response.data.transID,
       user,
       paymentRequest,
       false,

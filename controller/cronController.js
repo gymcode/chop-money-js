@@ -5,10 +5,15 @@ const {
   getMinutesFromNow,
 } = require("../utils/dateTimeHelpers");
 const Account = require("../models/Account");
+
+const AccountRepo = require("../repo/accountRepo");
+const TransactionRepo = require("../repo/transactionRepo");
+
 const UserRepo = require("../repo/userRepo");
 const JuniPayPayment = require("../config/juniPay");
 
 const sendPushNotification = require("../config/oneSignal");
+const { wrapFailureResponse } = require("../shared/response");
 
 async function CronNotificatioController() {
   try {
@@ -106,7 +111,7 @@ async function CronNotificatioController() {
 
 async function CronStatusCheckController() {
   try {
-    console.log("running transaction check cron")
+    // console.log("running transaction check cron")
     // select all payments from db where isActive is true
     const twoMinFromNow = getMinutesFromNow(2);
 
@@ -117,7 +122,10 @@ async function CronStatusCheckController() {
     })
       .populate("account")
       .exec();
-    console.log("payment data :: " + payments)
+
+    if (payments.length == 0) return;
+
+    console.log("payment data :: " + payments);
 
     payments.forEach(async (payment) => {
       if (payment.externalRefId == "") return;
@@ -134,10 +142,15 @@ async function CronStatusCheckController() {
         `response from juni pay status check ${transactionStatusCheck}`
       );
 
-      if (transactionStatusCheck.code != "00")
-        throw new Error(transactionStatusCheck.response.mesaage);
+      if (transactionStatusCheck.code != "00") {
+        console.log("status check failed for :: " + payment.externalRefId);
+        return;
+      }
 
-      if (transactionStatusCheck.response.status == "success" || transactionStatusCheck.response.status == "failed") {
+      if (
+        transactionStatusCheck.response.status == "success" ||
+        transactionStatusCheck.response.status == "failed"
+      ) {
         // update that payment active status to false
         const updatePayment = await Payment.updateOne(
           { _id: payment._id },
@@ -160,18 +173,72 @@ async function CronStatusCheckController() {
   }
 }
 
-
-async function CronAccountDeletion(){
+async function CronAccountDeletion() {
   try {
-    console.log("running account deletion cron")
+    console.log("running account deletion cron");
 
     // get all accounts set for deletion
-    // check if those the delete count for those ones is more than 2 days 
-    // if it's more than or equal to 2 then take the remainder and add it to the available amount to cash out 
-    // if it's less than the 2 then increament the delete count 
+    const accounts = await Account.find({
+      isDelete: true,
+    }).exec();
+    console.log(`Accounts set for deletion:: ${accounts}`);
 
+    if (accounts.length == 0) return;
+
+    accounts.forEach(async (account) => {
+      if (account.deleteDayCount < 2) {
+        const deleteAccountCount = account.deleteDayCount + 1;
+        const updateAccountDeleteCount =
+          await AccountRepo.updateAccountDeleteCount(
+            account._id,
+            deleteAccountCount
+          );
+
+        if (updateAccountDeleteCount.ok != 1) {
+          console.log(`Could not update delete count for :: ${account._id}`);
+          return;
+        }
+
+        console.log(
+          `Successfully updated the delete account count for account :: ${account._id}`
+        );
+        return;
+      } else {
+        const remainder = account.remainder - account.remainder;
+        const availableAmountToCashOut =
+          account.availableAmountToCashOut + account.remainder;
+
+        if (account.remainder < 1) return;
+
+        const updateAccountDeletionInformation =
+          await AccountRepo.updateAccountDeleteInformation(
+            account._id,
+            remainder,
+            availableAmountToCashOut
+          );
+
+        if (updateAccountDeletionInformation.ok != 1) {
+          console.log(
+            "Something went wrong trying to move money to available amount to cashout..."
+          );
+          return;
+        }
+
+        // close all the active transactions for that particular account
+        const closeTransactions =
+          await TransactionRepo.closeAllTransactionByAccountId(account._id);
+        if (closeTransactions.ok != 1) {
+          console.log("Could not close transactions ");
+          return;
+        }
+
+        console.log(
+          "successsfully transfered everything to available amount to cash out..."
+        );
+      }
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
 }
 
@@ -189,4 +256,8 @@ function formattedTime(hour, minute) {
   return `${hourStr}:${minuteStr}`;
 }
 
-module.exports = { CronNotificatioController, CronStatusCheckController, CronAccountDeletion };
+module.exports = {
+  CronNotificatioController,
+  CronStatusCheckController,
+  CronAccountDeletion,
+};

@@ -18,7 +18,7 @@ async function addAccount(request, user, endDate) {
     user: user._id,
   });
 
-  return await accountRequest.save();
+  return await accountRequest.save({ populate: { path: 'user' } });
 }
 
 async function getAccount(accountId) {
@@ -126,6 +126,22 @@ async function updateAccountPayment(accountId) {
   );
 }
 
+async function updateAccountDeleteInformation(accountId, remainder, availableAmountToCashOut) {
+  return await Account.updateOne(
+    { _id: accountId },
+    {
+      remainder: remainder,
+      availableAmountToCashOut: availableAmountToCashOut,
+      updateAt: new Date(),
+    },
+    {
+      new: true,
+      upsert: true,
+      rawResult: true,
+    }
+  );
+}
+
 module.exports = {
   addAccount,
   addTransactionsToAccounts,
@@ -136,5 +152,6 @@ module.exports = {
   getPopulatedTransactionsAccount,
   updateAccountDeleteCount,
   updateAccountDeleteStatus,
-  updateAccountBeneficiary
+  updateAccountBeneficiary,
+  updateAccountDeleteInformation
 };

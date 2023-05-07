@@ -22,7 +22,7 @@ const accountSchema = new Schema({
     isPaymentMade: {type: Boolean, default: false},
     isForcedClosed: {type: Boolean, default: false},
     isDelete: {type: Boolean, default: false},
-    isDeleteDayCount: {type: Number, default: 0},
+    deleteDayCount: {type: Number, default: 0},
     version: {type: Number, default: 1}
 }, {timestamps: true})
 
