@@ -1,6 +1,7 @@
 const mongoose = require("mongoose")
 const {Schema} = mongoose
 
+// account model 
 const accountSchema = new Schema({
     chopMoneyOwner: {type: String, enum: ["MYSELF", "OTHERS"]},
     isBeneficiary: {type: Boolean, default: false},
