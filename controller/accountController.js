@@ -507,7 +507,7 @@ exports.deleteAccount = async (req, res) => {
       null
     );
 
-    wrapSuccessResponse(res, 200, transactions, null, token);
+    wrapSuccessResponse(res, 200, updateAccountDelete.value, null, token);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, null);
   }
