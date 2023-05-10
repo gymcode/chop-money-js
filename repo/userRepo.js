@@ -103,6 +103,37 @@ async function updatePlayerID(msisdn, playerId) {
   );
 }
 
+
+async function updateUserAccountDeleteStatus(userId) {
+  return await User.updateOne(
+    { _id: userId },
+    {
+      updateAt: new Date(),
+      isDelete: true
+    },
+    {
+      new: true,
+      upsert: true,
+      rawResult: true,
+    }
+  );
+}
+
+async function updateUserAccountDeleteCount(userId, deleteCount) {
+  return await User.updateOne(
+    { _id: userId },
+    {
+      updateAt: new Date(),
+      isDeleteDayCount: deleteCount
+    },
+    {
+      new: true,
+      upsert: true,
+      rawResult: true,
+    }
+  );
+}
+
 async function deleteAccount(userId){
   return await User.deleteOne({_id: userId})
 }
@@ -123,5 +154,7 @@ module.exports = {
   activateUserAccount,
   addAccountsToUser,
   updatePlayerID,
-  deleteAccount
+  deleteAccount,
+  updateUserAccountDeleteStatus, 
+  updateUserAccountDeleteCount
 }

@@ -5,6 +5,7 @@ const {
   getMinutesFromNow,
 } = require("../utils/dateTimeHelpers");
 const Account = require("../models/Account");
+const User = require("../models/User")
 
 const AccountRepo = require("../repo/accountRepo");
 const TransactionRepo = require("../repo/transactionRepo");
@@ -241,6 +242,79 @@ async function CronAccountDeletion() {
     console.log(error);
   }
 }
+
+async function CronUserDeletion() {
+  try {
+    console.log("running user account deletion cron");
+
+    // get all accounts set for deletion
+    const users = await User.find({
+      isDelete: true,
+    }).populate("account").exec();
+    console.log(`User accounts set for deletion:: ${users}`);
+
+    if (users.length == 0) return;
+
+    users.forEach(async (user) => {
+      if (user.deleteDayCount < 7) {
+        const deleteUserCount = user.deleteDayCount + 1;
+        const updateAccountDeleteCount =
+          await UserRepo.updateUserAccountDeleteCount(
+            user._id,
+            deleteUserCount
+          );
+
+        if (updateAccountDeleteCount.ok != 1) {
+          console.log(`Could not update delete count for :: ${user._id}`);
+          return;
+        }
+
+        console.log(
+          `Successfully updated the delete account count for account :: ${user._id}`
+        );
+        return;
+      } else {
+        user.forEach(async(account)=>{
+          const remainder = account.remainder - account.remainder;
+          const availableAmountToCashOut =
+            account.availableAmountToCashOut + account.remainder;
+  
+          if (account.remainder < 1) return;
+  
+          const updateAccountDeletionInformation =
+            await AccountRepo.updateAccountDeleteInformation(
+              user._id,
+              remainder,
+              availableAmountToCashOut
+            );
+  
+          if (updateAccountDeletionInformation.ok != 1) {
+            console.log(
+              "Something went wrong trying to move money to available amount to cashout..."
+            );
+            return;
+          }
+  
+          // close all the active transactions for that particular account
+          const closeTransactions =
+            await TransactionRepo.closeAllTransactionByAccountId(user._id);
+          if (closeTransactions.ok != 1) {
+            console.log("Could not close transactions ");
+            return;
+          }
+  
+          console.log(
+            "successsfully transfered everything to available amount to cash out..."
+          );
+        })
+       
+      }
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 
 function formattedTime(hour, minute) {
   let hourStr = hour;
