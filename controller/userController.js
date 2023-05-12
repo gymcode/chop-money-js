@@ -428,16 +428,29 @@ exports.logOut = (req, res) => {
  * @param {*} req
  * @param {*} res
  */
-exports.delete = (req, res) => {
+exports.delete = async(req, res) => {
   try {
     const { user, token } = res.locals.user_info;
     if (user == null) throw new Error("User not found");
 
-    if (user.account != null) throw new Error("Cannot delete account due to ");
+    // set the account for deletion
+    const updateUserAccountDelete = await UserRepo.updateUserAccountDeleteStatus(
+      user._id
+    );
 
-    const deletedAccount = UserRepo.deleteAccount(user._id);
+    console.log(`here :: ${JSON.stringify(updateUserAccountDelete)}`)
 
-    wrapSuccessResponse(res, 200, null, null, token);
+    if (!updateUserAccountDelete.acknowledged)
+      throw new Error("Could not set account for deletion. Please try again.");
+
+    await sendPushNotification(
+      [user.playerId],
+      "Account deletion",
+      "Hi there, you will be able to delete your user accout after 7 days",
+      null
+    );
+
+    wrapSuccessResponse(res, 200, "Hi there, you will be able to delete your user accout after 7 days", null, token);
   } catch (error) {
     console.log(error);
     return wrapFailureResponse(res, 500, `An Error occured: ${error}`);

@@ -26,7 +26,7 @@ async function listTransactionPerAccount(accountId) {
 }
 
 async function getTransationHistoryByForeignId(foreignId) {
-  return await TransactionHistory.find({
+  return await TransactionHistory.findOne({
     foreignId: foreignId,
   }).exec();
 }

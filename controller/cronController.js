@@ -1,3 +1,6 @@
+const util = require("util");
+
+const axios = require("axios")
 const Transaction = require("../models/Transaction");
 const Payment = require("../models/Payment");
 const {
@@ -5,7 +8,7 @@ const {
   getMinutesFromNow,
 } = require("../utils/dateTimeHelpers");
 const Account = require("../models/Account");
-const User = require("../models/User")
+const User = require("../models/User");
 
 const AccountRepo = require("../repo/accountRepo");
 const TransactionRepo = require("../repo/transactionRepo");
@@ -140,7 +143,9 @@ async function CronStatusCheckController() {
         "https://api.junipayments.com/checktranstatus"
       );
       console.log(
-        `response from juni pay status check ${transactionStatusCheck}`
+        `response from juni pay status check ${util.inspect(
+          transactionStatusCheck
+        )}`
       );
 
       if (transactionStatusCheck.code != "00") {
@@ -149,9 +154,13 @@ async function CronStatusCheckController() {
       }
 
       if (
-        transactionStatusCheck.response.status == "success" ||
-        transactionStatusCheck.response.status == "failed"
+        transactionStatusCheck.response.data.status == "success" ||
+        transactionStatusCheck.response.data.status == "failed"
       ) {
+        const status =
+          transactionStatusCheck.response.data.status == "success"
+            ? "SUCCESS"
+            : "FAILED";
         // update that payment active status to false
         const updatePayment = await Payment.updateOne(
           { _id: payment._id },
@@ -166,7 +175,22 @@ async function CronStatusCheckController() {
           }
         );
 
-        console.log(`updating ${updatePayment}`);
+        // in case of live deployment, use a token
+
+        const payload = {
+          status: transactionStatusCheck.response.data.info.status,
+          trans_id: transactionStatusCheck.response.data.info.foreignID,
+          foreignID: payment.transactionId,
+        };
+        try {
+          const response = await axios.post("https://chop-money.fly.dev/api/v1/account/callback/response", payload  ); 
+          console.log("response from making the call back :: ", response)
+        } catch (error) {
+          console.log(error)
+        }
+        //trigger a post request
+
+        console.log(`updating ${util.inspect(updatePayment)}`);
       }
     });
   } catch (error) {
@@ -250,7 +274,9 @@ async function CronUserDeletion() {
     // get all accounts set for deletion
     const users = await User.find({
       isDelete: true,
-    }).populate("account").exec();
+    })
+      .populate("account")
+      .exec();
     console.log(`User accounts set for deletion:: ${users}`);
 
     if (users.length == 0) return;
@@ -274,27 +300,27 @@ async function CronUserDeletion() {
         );
         return;
       } else {
-        user.forEach(async(account)=>{
+        user.forEach(async (account) => {
           const remainder = account.remainder - account.remainder;
           const availableAmountToCashOut =
             account.availableAmountToCashOut + account.remainder;
-  
+
           if (account.remainder < 1) return;
-  
+
           const updateAccountDeletionInformation =
             await AccountRepo.updateAccountDeleteInformation(
               user._id,
               remainder,
               availableAmountToCashOut
             );
-  
+
           if (updateAccountDeletionInformation.ok != 1) {
             console.log(
               "Something went wrong trying to move money to available amount to cashout..."
             );
             return;
           }
-  
+
           // close all the active transactions for that particular account
           const closeTransactions =
             await TransactionRepo.closeAllTransactionByAccountId(user._id);
@@ -302,19 +328,17 @@ async function CronUserDeletion() {
             console.log("Could not close transactions ");
             return;
           }
-  
+
           console.log(
             "successsfully transfered everything to available amount to cash out..."
           );
-        })
-       
+        });
       }
     });
   } catch (error) {
     console.log(error);
   }
 }
-
 
 function formattedTime(hour, minute) {
   let hourStr = hour;
@@ -334,4 +358,5 @@ module.exports = {
   CronNotificatioController,
   CronStatusCheckController,
   CronAccountDeletion,
+  CronUserDeletion,
 };

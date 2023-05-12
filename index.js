@@ -7,6 +7,7 @@ const {
   CronNotificatioController,
   CronStatusCheckController,
   CronAccountDeletion,
+  CronUserDeletion
 } = require("./controller/cronController");
 config();
 
@@ -41,5 +42,7 @@ app.listen(port, () => {
 
   cron.schedule("0 0 * * *", () => {
     CronAccountDeletion();
+    CronAccountDeletion()
   });
+
 });

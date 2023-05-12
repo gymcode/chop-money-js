@@ -258,9 +258,9 @@ exports.disburseMoney = async (req, res) => {
       paymentRequest,
       disbursementUrl
     );
-    console.log("response from disbursement endpoint" + paymentResponse);
+    console.log("response from disbursement endpoint" + util.inspect(paymentResponse));
 
-    if (paymentResponse.code != "00")
+    if (paymentResponse.code != "00" || paymentResponse.response.data.code == "401")
       throw new Error(paymentResponse.response.message);
 
     const paymentAuditResponse = await PaymentRepo.addPayment(
@@ -359,9 +359,9 @@ exports.paymentResponse = async (req, res) => {
           );
       }else{
         if (paymentStatus) {
-          await TransactionHistoryRepo.updateTransactionHistoryStatus("SUCCESS")
+          transactionHistory = await TransactionHistoryRepo.updateTransactionHistoryStatus("SUCCESS", request.foreignID)
         }else{
-          await TransactionHistoryRepo.updateTransactionHistoryStatus("FAILURE")
+          transactionHistory = await TransactionHistoryRepo.updateTransactionHistoryStatus("FAILURE", request.foreignID)
         }
       }
 
@@ -468,13 +468,11 @@ exports.deleteAccount = async (req, res) => {
     if (account == null)
       return wrapFailureResponse(res, 404, "Account cannot be found");
 
-    const transactions = account.transactions;
-
     if (account.isBeneficiary) {
       const updateAccountBeneficiary =
         await AccountRepo.updateAccountBeneficiary(params.accountId, false);
 
-      if (updateAccountBeneficiary.ok != 1)
+      if (!updateAccountBeneficiary.acknowledged)
         throw new Error(
           `Could not remove beneficiary from account :: ${params.accountId}.`
         );
