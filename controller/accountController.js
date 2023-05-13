@@ -495,7 +495,7 @@ exports.deleteAccount = async (req, res) => {
       params.accountId
     );
 
-    if (updateAccountDelete.ok != 1)
+    if (!updateAccountDelete.acknowledged)
       throw new Error("Could not set account for deletion. Please try again.");
 
     await sendPushNotification(
@@ -505,7 +505,9 @@ exports.deleteAccount = async (req, res) => {
       null
     );
 
-    wrapSuccessResponse(res, 200, updateAccountDelete.value, null, token);
+    const noOfDays = 2 - account.deleteDayCount
+
+    wrapSuccessResponse(res, 200, `Hi there, you will be able to delete your accout after ${noOfDays} days`, null, token);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, null);
   }

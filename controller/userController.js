@@ -450,7 +450,9 @@ exports.delete = async(req, res) => {
       null
     );
 
-    wrapSuccessResponse(res, 200, "Hi there, you will be able to delete your user accout after 7 days", null, token);
+    const noOfDays = 7 - user.deleteDayCount
+
+    wrapSuccessResponse(res, 200, `Hi there, you will be able to delete your user accout after ${noOfDays} days`, null, token);
   } catch (error) {
     console.log(error);
     return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
