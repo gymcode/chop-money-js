@@ -15,6 +15,7 @@ async function addAccount(request, user, endDate) {
     endDate: endDate,
     payTime: request.payTime,
     totalPayAmount: request.totalPayAmount,
+    provider: request.provider,
     user: user._id,
   });
 

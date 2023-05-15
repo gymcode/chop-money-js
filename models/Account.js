@@ -15,6 +15,7 @@ const accountSchema = new Schema({
     endDate: {type: Date},
     payTime: {type: String},
     totalPayAmount: Number,
+    provider: {type: String, default: ""},
     remainder: {type:Number, default: 0.0},
     user: {type: Schema.Types.ObjectId, ref: 'users'},
     transactions: [{type: Schema.Types.ObjectId, ref: 'transactions'}],

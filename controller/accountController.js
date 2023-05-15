@@ -236,9 +236,12 @@ exports.disburseMoney = async (req, res) => {
       1000000000000 + Math.random() * 9000000000000
     );
 
+    // temp fix 
+    const provider = account.provider == "" ? user.provider: account.provider
+
     const paymentRequest = {
       amount: request.amount,
-      provider: user.provider,
+      provider: provider,
       phoneNumber: receiver_phone,
       receiver_phone: process.env.JUNI_PAY_SENDER_MSISDN,
       channel: "mobile_money",
