@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 const {config} = require("dotenv")
 
-function Database_Connection(){
+async function Database_Connection(){
   config()
   try {
     const options = {
@@ -22,6 +22,7 @@ function Database_Connection(){
     .catch((err=>{console.error(`An Error occured trying to establish a database connection:: Error=> ${err}`)}))
   } catch (error) {
     console.error(`An Error occured trying to a database connection:: Error=> ${error}`)
+    process.exit(1);
   }
 }
 

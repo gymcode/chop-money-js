@@ -7,7 +7,7 @@ const {
   CronNotificatioController,
   CronStatusCheckController,
   CronAccountDeletion,
-  CronUserDeletion
+  CronUserDeletion,
 } = require("./controller/cronController");
 config();
 
@@ -26,23 +26,23 @@ app.use(`${BASE_URL}/user`, userRoutes);
 // account routes
 app.use(`${BASE_URL}/account`, accountRoutes);
 
-app.listen(port, () => {
-  // establish the database connection
-  Database_Connection();
-  console.log(`Example app listening on port ${port}`);
+Database_Connection().then(() => {
+  app.listen(port, () => {
+    // establish the database connection
+    console.log(`Example app listening on port ${port}`);
 
-  // run cron configuration and call
-  cron.schedule("1 * * * * *", () => {
-    CronNotificatioController();
+    // run cron configuration and call
+    cron.schedule("1 * * * * *", () => {
+      CronNotificatioController();
+    });
+
+    cron.schedule("* * * * * *", () => {
+      CronStatusCheckController();
+    });
+
+    cron.schedule("0 0 * * *", () => {
+      CronAccountDeletion();
+      CronAccountDeletion();
+    });
   });
-
-  cron.schedule("* * * * * *", () => {
-    CronStatusCheckController();
-  });
-
-  cron.schedule("0 0 * * *", () => {
-    CronAccountDeletion();
-    CronAccountDeletion()
-  });
-
 });
