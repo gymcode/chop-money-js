@@ -60,7 +60,6 @@ const User = require("../models/User");
     {
       username: request.username,
       email: request.email,
-      gender: request.gender,
       update_at: new Date(),
     },
     {

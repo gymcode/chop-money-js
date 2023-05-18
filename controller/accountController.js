@@ -483,7 +483,7 @@ exports.deleteAccount = async (req, res) => {
       // send sms to beneficiary and also send push notification to user for disabling the account
       NaloSendSms(
         `+${account.beneficiaryContact}`,
-        `Hi there, ${account.ownerName} has removed your from being a beneficairy to the account.`
+        `Hi there, ${account.ownerName} has deleted your budget on Chopmoney. You will no longer receive money through Chopmoney. You can easily create a budget by downloading the Chopmoney App today! www.chopmoney.co.`
       );
       await sendPushNotification(
         [user.playerId],
