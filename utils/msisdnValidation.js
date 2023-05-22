@@ -21,6 +21,10 @@ function Gh_MsisdnValidation(msisdn) {
         Object.assign(response, { error: false, msg: msisdn.substring(1) });
         break;
 
+      case msisdn.startsWith("233") && msisdn.length >=12:
+        Object.assign(response, { error: false, msg: msisdn });
+        break;
+
       case msisdn.startsWith("00") && msisdn.length > 12:
         Object.assign(response, {
           error: false,

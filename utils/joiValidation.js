@@ -10,7 +10,7 @@ const RegistrationSchema = Joi.object({
 
 const UpdateUserSchema = Joi.object({
     username:  Joi.string().alphanum().min(3).max(30).required(),
-    email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }),
+    email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }).optional().allow(""),
     gender: Joi.string()
 })
 
