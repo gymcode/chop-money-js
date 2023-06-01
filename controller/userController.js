@@ -7,7 +7,7 @@ const GenerateOTP = require("../utils/generateOtp");
 const client = require("../config/redis");
 const bcrypt = require("bcryptjs");
 const { getMinutes } = require("../utils/dateTimeHelpers");
-const { NaloSendSms } = require("../config/sms");
+const { SendSms } = require("../config/sms");
 const JuniPayPayment = require("../config/juniPay");
 
 // user model
@@ -81,7 +81,7 @@ exports.userRegistration = async (req, res) => {
 
     await client.set(storageKey, JSON.stringify(otpStorageObject));
 
-    NaloSendSms(
+    SendSms(
       `+${msisdn}`,
       `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
     );
@@ -178,7 +178,7 @@ exports.resendOTP = async (req, res) => {
 
     await client.set(storageKey, JSON.stringify(otpStorageObject));
 
-    NaloSendSms(
+    SendSms(
       `+${msisdn}`,
       `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
     );
@@ -219,7 +219,7 @@ exports.resetPin = async (req, res) => {
     const resp = await UserRepo.resetUserAccount(user);
     if (resp.ok != 1) throw new Error("Could not reset account");
 
-    NaloSendSms(
+    SendSms(
       `+${msisdn}`,
       `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
     );

@@ -18,7 +18,7 @@ const UserRepo = require("../repo/userRepo");
 const PaymentRepo = require("../repo/paymentRepo");
 const TransactionHistoryRepo = require("../repo/transactionHistoryRepo");
 const TransactionRepo = require("../repo/transactionRepo");
-const { NaloSendSms } = require("../config/sms");
+const { SendSms } = require("../config/sms");
 const sendPushNotification = require("../config/oneSignal");
 
 const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
@@ -176,7 +176,7 @@ exports.createAccount = async (req, res) => {
         .replace("{AMOUNT}", createdAccount.payFrequencyAmount)
         .replace("{TIME}", createdAccount.payTime)
         .replace("{FREQUENCY}", createdAccount.payFrequency);
-      NaloSendSms(`+${createdAccount.beneficiaryContact}`, beneficiarySms);
+      SendSms(`+${createdAccount.beneficiaryContact}`, beneficiarySms);
 
       await sendPushNotification(
         [createdAccount.user.playerId],
@@ -481,7 +481,7 @@ exports.deleteAccount = async (req, res) => {
         );
 
       // send sms to beneficiary and also send push notification to user for disabling the account
-      NaloSendSms(
+      SendSms(
         `+${account.beneficiaryContact}`,
         `Hi there, ${account.ownerName} has deleted your budget on Chopmoney. You will no longer receive money through Chopmoney. You can easily create a budget by downloading the Chopmoney App today! www.chopmoney.co.`
       );
