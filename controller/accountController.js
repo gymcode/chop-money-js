@@ -435,7 +435,7 @@ exports.topUp = async (req, res) => {
     if (account.isPaymentMade)
       throw new Error("Payment has already been made on this account.");
 
-    if (account.startDate < new Date())
+    if (account.startDate.toLocaleDateString() < new Date().toLocaleDateString())
       throw new Error(
         "Oops sorry your the time to start receiving money has started yet there's no cash!!!. Your account will be terminated soon"
       );
@@ -628,6 +628,7 @@ async function makePayment(request, user, userAccountId) {
         "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
 
+    console.log(`request sent to Juni pay :: ${util.inspect(paymentRequest)}`)
     console.log("initiating request to juni pay for payment");
     const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
     console.log("response from juni pay :: " + util.inspect(paymentResponse));

@@ -1,6 +1,6 @@
 const axios = require("axios")
 
-const toggleValue = true
+const toggleValue = false
 
 async function NaloSendSms(msisdn, message){
     try {

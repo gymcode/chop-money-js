@@ -142,11 +142,11 @@ async function CronStatusCheckController() {
         payload,
         "https://api.junipayments.com/checktranstatus"
       );
-      console.log(
-        `response from juni pay status check ${util.inspect(
-          transactionStatusCheck
-        )}`
-      );
+      // console.log(
+      //   `response from juni pay status check ${util.inspect(
+      //     transactionStatusCheck
+      //   )}`
+      // ); 
 
       if (transactionStatusCheck.code != "00") {
         console.log("status check failed for :: " + payment.externalRefId);
