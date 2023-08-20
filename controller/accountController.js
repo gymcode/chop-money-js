@@ -20,6 +20,8 @@ const TransactionHistoryRepo = require("../repo/transactionHistoryRepo");
 const TransactionRepo = require("../repo/transactionRepo");
 const { SendSms } = require("../config/sms");
 const sendPushNotification = require("../config/oneSignal");
+const {CronStatusCheckController} = require("./cronController");
+const cron = require("node-cron");
 
 const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
 const disbursementUrl = process.env.JUNI_PAY_DISBURSEMENT_ENDPOINT;
@@ -63,21 +65,19 @@ exports.createAccount = async (req, res) => {
       if (response.code != "00") throw new Error(response.response.message);
     }
 
-    const numberOfDays = 31;
+    const numberOfDays = request.numberOfDays == "" || request.numberOfDays == undefined ? 31 : request.numberOfDays;
+
+    console.log(`number of days for receiving money :: ${numberOfDays}`)
+
     const totalHours = numberOfDays * 24;
     let endDate =
       request.endDate == "" ? getCurrentDateTime(totalHours) : request.endDate;
 
-    const { isValid, isBeneficiary } = accountCreationValidation(user);
+    const { isBeneficiary } = accountCreationValidation(user);
 
     if (request.isBeneficiary && isBeneficiary)
       throw new Error(
         "You have reached your limit for creating an account for a beneficiary"
-      );
-
-    if (!request.isBeneficiary && !isValid)
-      throw new Error(
-        "You have reached your limiit for creating a personal account"
       );
 
     const createdAccount = await AccountRepo.addAccount(request, user, endDate);
@@ -128,6 +128,9 @@ exports.createAccount = async (req, res) => {
       default:
         throw new Error("This pay frequency does not exist");
     }
+
+    console.log("number of days to work :: ", days)
+
 
     const paymentResponse = await makePayment(
       request,
@@ -185,6 +188,8 @@ exports.createAccount = async (req, res) => {
         null
       );
     }
+
+    startDynamicCron()
 
     wrapSuccessResponse(res, 200, responseObject, null, token);
   } catch (error) {
@@ -449,6 +454,8 @@ exports.topUp = async (req, res) => {
       account: account,
     };
 
+    startDynamicCron()
+
     return wrapSuccessResponse(res, 200, responseObject, null, token);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);
@@ -511,6 +518,41 @@ exports.deleteAccount = async (req, res) => {
     const noOfDays = 2 - account.deleteDayCount
 
     wrapSuccessResponse(res, 200, `Hi there, you will be able to delete your accout after ${noOfDays} days`, null, token);
+  } catch (error) {
+    return wrapFailureResponse(res, 500, error.message, null);
+  }
+};
+
+exports.hardDeleteAccount = async (req, res) => {
+  try {
+    const params = req.params;
+
+    const { user, token } = res.locals.user_info;
+
+    if (user == null)
+      return wrapFailureResponse(res, 404, "User not found", null);
+
+    const account = await AccountRepo.getAccount(
+      params.accountId
+    );
+
+    if (account == null)
+      return wrapFailureResponse(res, 404, "Account cannot be found");
+
+    if (!account.isPaymentMade) {
+      const deleteAccountResponse =
+        await AccountRepo.deleteAccount(params.accountId);
+
+      if (!deleteAccountResponse.acknowledged)
+        throw new Error(
+          `Could not delete account :: ${params.accountId}.`
+        );
+
+        wrapSuccessResponse(res, 200, `Account has successfully been deleted.`, null, token);
+    }else{
+      wrapSuccessResponse(res, 200, `Account delete account since payment has already been made on it`, null, token);
+    }
+
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, null);
   }
@@ -665,17 +707,37 @@ function accountCreationValidation(user) {
     (account) => account.isBeneficiary == true
   );
 
-  const filteredSelfAccounts = user.accounts.filter(
-    (account) => account.isBeneficiary == false
-  );
-
   if (filteredBeneficiaryAccounts.length > 2) {
     response = { isValid: false, isBeneficiary: true };
   }
 
-  if (filteredSelfAccounts.length > 2) {
-    response = { isValid: false, isBeneficiary: false };
+  return response;
+}
+
+
+// Function to start the dynamic cron job
+function startDynamicCron() {
+  let interval = 30 * 1000; // Initial interval is 30 seconds
+
+  function runCron() {
+    cron.schedule(`*/${interval / 1000} * * * * *`, () => {
+      console.log(`Running status check for payment at ${interval / 1000} seconds interval.`);
+      CronStatusCheckController();
+
+      // Increase the interval for the next run
+      interval += 30 * 1000; // Add 30 seconds for the next run
+
+      // Stop the cron job if it exceeds 3 minutes (180,000 milliseconds)
+      if (interval > 180000) {
+        console.log(`Payment ${paymentId} status check completed.`);
+        return;
+      }
+
+      // Schedule the next cron run
+      runCron();
+    });
   }
 
-  return response;
+  // Start the initial cron job
+  runCron();
 }

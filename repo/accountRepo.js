@@ -143,6 +143,17 @@ async function updateAccountDeleteInformation(accountId, remainder, availableAmo
   );
 }
 
+async function deleteAccount(accountId) {
+  return await Account.deleteOne(
+    { _id: accountId },
+    {
+      new: true,
+      upsert: true,
+      rawResult: true,
+    }
+  );
+}
+
 module.exports = {
   addAccount,
   addTransactionsToAccounts,
@@ -154,5 +165,6 @@ module.exports = {
   updateAccountDeleteCount,
   updateAccountDeleteStatus,
   updateAccountBeneficiary,
-  updateAccountDeleteInformation
+  updateAccountDeleteInformation,
+  deleteAccount
 };

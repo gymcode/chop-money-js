@@ -36,9 +36,9 @@ Database_Connection().then(() => {
       CronNotificatioController();
     });
 
-    cron.schedule("* * * * * *", () => {
-      CronStatusCheckController();
-    });
+    // cron.schedule("* * * * * *", () => {
+    //   CronStatusCheckController();
+    // });
 
     cron.schedule("0 0 * * *", () => {
       CronAccountDeletion();

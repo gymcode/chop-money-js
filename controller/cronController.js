@@ -129,7 +129,7 @@ async function CronStatusCheckController() {
 
     if (payments.length == 0) return;
 
-    console.log("payment data :: " + payments);
+    // console.log("payment data :: " + payments);
 
     payments.forEach(async (payment) => {
       if (payment.externalRefId == "") return;
@@ -184,7 +184,7 @@ async function CronStatusCheckController() {
         };
         try {
           const response = await axios.post("https://chop-money.fly.dev/api/v1/account/callback/response", payload  ); 
-          console.log("response from making the call back :: ", response)
+          // console.log("response from making the call back :: ", response)
         } catch (error) {
           console.log(error)
         }
@@ -193,6 +193,86 @@ async function CronStatusCheckController() {
         console.log(`updating ${util.inspect(updatePayment)}`);
       }
     });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function CronStatusCheckControllerForSinglePayment() {
+  try {
+
+    let payment = await Payment.find({
+      isActive: true,
+      statusDescription: "PENDING"
+    })
+      .populate("account")
+      .exec();
+
+    if (payments.length == 0) return;
+
+    console.log("payment data :: " + payments);
+
+
+    if (payment.externalRefId == "") return;
+
+    const payload = {
+      transID: payment.externalRefId,
+    };
+
+    const transactionStatusCheck = await JuniPayPayment(
+      payload,
+      "https://api.junipayments.com/checktranstatus"
+    );
+    // console.log(
+    //   `response from juni pay status check ${util.inspect(
+    //     transactionStatusCheck
+    //   )}`
+    // ); 
+
+    if (transactionStatusCheck.code != "00") {
+      console.log("status check failed for :: " + payment.externalRefId);
+      return;
+    }
+
+    if (
+      transactionStatusCheck.response.data.status == "success" ||
+      transactionStatusCheck.response.data.status == "failed"
+    ) {
+      const status =
+        transactionStatusCheck.response.data.status == "success"
+          ? "SUCCESS"
+          : "FAILED";
+      // update that payment active status to false
+      const updatePayment = await Payment.updateOne(
+        { _id: payment._id },
+        {
+          updateAt: new Date(),
+          isActive: false,
+        },
+        {
+          new: true,
+          upsert: true,
+          rawResult: true,
+        }
+      );
+
+      // in case of live deployment, use a token
+
+      const payload = {
+        status: transactionStatusCheck.response.data.info.status,
+        trans_id: transactionStatusCheck.response.data.info.foreignID,
+        foreignID: payment.transactionId,
+      };
+      try {
+        const response = await axios.post("https://chop-money.fly.dev/api/v1/account/callback/response", payload  ); 
+        console.log("response from making the call back :: ", response)
+      } catch (error) {
+        console.log(error)
+      }
+      //trigger a post request
+
+      console.log(`updating ${util.inspect(updatePayment)}`);
+    }
   } catch (error) {
     console.log(error);
   }
