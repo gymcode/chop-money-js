@@ -17,6 +17,8 @@ router.post("/top-up", isUserAuthenticated(client), accountController.topUp)
 
 router.post("/disburse-payment", isUserAuthenticated(client), accountController.disburseMoney)
 
+router.put("/transaction/status/:accountId", isUserAuthenticated(client), accountController.transactionStatus)
+
 router.delete("/delete/:accountId", isUserAuthenticated(client), accountController.deleteAccount)
 
 router.delete("/delete/account/:accountId", isUserAuthenticated(client), accountController.hardDeleteAccount)

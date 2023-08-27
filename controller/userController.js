@@ -224,7 +224,7 @@ exports.resetPin = async (req, res) => {
       `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
     );
 
-    wrapSuccessResponse(res, 200, user);
+    wrapSuccessResponse(res, 200, _.omit(user, ["password"]));
   } catch (error) {
     console.log(error);
     return wrapFailureResponse(res, 500, `An Error occured: ${error}`);

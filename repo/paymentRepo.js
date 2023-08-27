@@ -23,6 +23,13 @@ async function addPayment(
   return await paymentAuditRequest.save();
 }
 
+async function getPaymentByAccountId(accountId) {
+  return await Payment.findOne({
+    account: accountId,
+    isActive: true
+  }).exec()
+}
+
 async function getPaymentByTransactionId(foreignID) {
   return await Payment.findOne({
     transactionId: foreignID,
@@ -50,4 +57,5 @@ module.exports = {
   addPayment,
   getPaymentByTransactionId,
   updatePayment,
+  getPaymentByAccountId
 };

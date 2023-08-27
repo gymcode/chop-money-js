@@ -20,7 +20,7 @@ const TransactionHistoryRepo = require("../repo/transactionHistoryRepo");
 const TransactionRepo = require("../repo/transactionRepo");
 const { SendSms } = require("../config/sms");
 const sendPushNotification = require("../config/oneSignal");
-const {CronStatusCheckController} = require("./cronController");
+const {CronStatusCheckControllerForSinglePayment} = require("./cronController");
 const cron = require("node-cron");
 
 const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
@@ -188,8 +188,6 @@ exports.createAccount = async (req, res) => {
         null
       );
     }
-
-    startDynamicCron()
 
     wrapSuccessResponse(res, 200, responseObject, null, token);
   } catch (error) {
@@ -454,13 +452,130 @@ exports.topUp = async (req, res) => {
       account: account,
     };
 
-    startDynamicCron()
-
     return wrapSuccessResponse(res, 200, responseObject, null, token);
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);
   }
 };
+
+exports.transactionStatus = async (req, res) => {
+  try {
+    const params = req.params;
+    const { user, token } = res.locals.user_info;
+
+    if (user == null) throw new Error("User not found");
+
+    const account = await AccountRepo.getAccount(params.accountId);
+    console.log(account);
+    if (account == null) throw new Error("Account does not exist");
+
+
+    if (account.isPaymentMade){
+      const response = {
+        status: "PAID",
+        account: account
+      }
+      return wrapSuccessResponse(res, 200, response, null, token)
+    }
+
+    const payment = await PaymentRepo.getPaymentByAccountId(account._id)
+
+    console.log("payment response :: ", payment)
+
+    if (payment == null) throw new Error (`Payment for account ${account._id} does not exist.`)
+
+    if (payment.externalRefId == "") throw new Error (`External reference id cannot be found for your payment. Kindly contact suppport.`);
+
+    const payload = {
+      transID: payment.externalRefId,
+    };
+
+    console.log("transaction id :: ", payment.externalRefId)
+
+    const transactionStatusCheck = await JuniPayPayment(
+      payload,
+      "https://api.junipayments.com/checktranstatus"
+    );
+    console.log(
+      `response from juni pay status check ${util.inspect(
+        transactionStatusCheck
+      )}`
+    ); 
+
+    if (transactionStatusCheck.code != "00") {
+      console.log("status check failed for :: " + payment.externalRefId);
+
+      const response = {
+        status: "NOT_PAID",
+        account: account
+      }
+      return wrapSuccessResponse(res, 200, response, null, token)
+    }
+
+
+    let response;
+    switch (transactionStatusCheck.response.data.status) {
+      case "success":
+
+        const updatedPayment = await PaymentRepo.updatePayment(
+          "SUCCESS",
+          payment._id,
+          transactionStatusCheck.response.data,
+          true
+        );
+        console.log(`updated payment response ${updatedPayment}`);
+
+        const updateAccountPayment = await AccountRepo.updateAccountPayment(
+          account._id
+        );
+        console.log("********" + updateAccountPayment + "**********");
+
+        const successAccount = await AccountRepo.getAccount(request.accountId)
+        const successResponse = {
+          status: "PAID",
+          account: successAccount
+        }
+
+        response = wrapSuccessResponse(res, 200, successResponse, null, token)
+
+        break;
+
+      case "pending":
+        const pendingResponse = {
+          status: "PENDING",
+          account: account
+        }
+
+        response = wrapSuccessResponse(res, 200, pendingResponse, null, token)
+        break;
+    
+      default:
+
+        const updatedFailedPayment = await PaymentRepo.updatePayment(
+          "FAILED",
+          payment._id,
+          transactionStatusCheck.response.data,
+          false
+        );
+        console.log(`updated payment response ${updatedFailedPayment}`);
+
+        const failedResponse = {
+          status: "NOT_PAID",
+          account: account
+        }
+
+        response = wrapSuccessResponse(res, 200, failedResponse, null, token)
+        break;
+    }
+
+    
+
+    return response
+  } catch (error) {
+    return wrapFailureResponse(res, 500, error.message, error);
+  }
+};
+
 
 exports.deleteAccount = async (req, res) => {
   try {
@@ -692,6 +807,8 @@ async function makePayment(request, user, userAccountId) {
     if (paymentAuditResponse == null)
       throw new Error("Could not save payment audit");
 
+    // startDynamicCron(paymentAuditResponse._id) 
+
     return { code: "00", response: paymentResponse.response.data };
   } catch (error) {
     return { code: "01", response: error.message };
@@ -716,28 +833,25 @@ function accountCreationValidation(user) {
 
 
 // Function to start the dynamic cron job
-function startDynamicCron() {
-  let interval = 30 * 1000; // Initial interval is 30 seconds
+// function startDynamicCron(paymentId) {
+//   console.log("initial interval for 30 seconds")
+//   let interval = 30 * 1000; // Initial interval is 30 seconds
+//   console.log(`interval :: ${interval}`)
 
-  function runCron() {
-    cron.schedule(`*/${interval / 1000} * * * * *`, () => {
-      console.log(`Running status check for payment at ${interval / 1000} seconds interval.`);
-      CronStatusCheckController();
+//   const cronTask = cron.schedule(`*/${interval / 1000} * * * * *`, () => {
+//     console.log(`Running status check for payment ${paymentId} at ${interval / 1000} seconds interval.`);
+//     CronStatusCheckControllerForSinglePayment(paymentId);
 
-      // Increase the interval for the next run
-      interval += 30 * 1000; // Add 30 seconds for the next run
+//     // Increase the interval for the next run
+//     interval += 60 * 1000; // Add 30 seconds for the next run
 
-      // Stop the cron job if it exceeds 3 minutes (180,000 milliseconds)
-      if (interval > 180000) {
-        console.log(`Payment ${paymentId} status check completed.`);
-        return;
-      }
+//     if (interval > 180000) {
+//       console.log(`Payment ${paymentId} status check completed.`);
+//       cronTask.stop()
+//     }
+//   });
 
-      // Schedule the next cron run
-      runCron();
-    });
-  }
+//   // Stop the cron job if it exceeds 3 minutes (180,000 milliseconds)
+//   console.log(`Starting cron task for interval ${interval / 1000}`)
 
-  // Start the initial cron job
-  runCron();
-}
+// }

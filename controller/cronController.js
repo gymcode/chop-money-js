@@ -129,7 +129,7 @@ async function CronStatusCheckController() {
 
     if (payments.length == 0) return;
 
-    // console.log("payment data :: " + payments);
+    console.log("payment data :: " + payments);
 
     payments.forEach(async (payment) => {
       if (payment.externalRefId == "") return;
@@ -184,7 +184,7 @@ async function CronStatusCheckController() {
         };
         try {
           const response = await axios.post("https://chop-money.fly.dev/api/v1/account/callback/response", payload  ); 
-          // console.log("response from making the call back :: ", response)
+          console.log("response from making the call back :: ", response)
         } catch (error) {
           console.log(error)
         }
@@ -198,19 +198,19 @@ async function CronStatusCheckController() {
   }
 }
 
-async function CronStatusCheckControllerForSinglePayment() {
+async function CronStatusCheckControllerForSinglePayment(paymentId) {
   try {
 
     let payment = await Payment.find({
-      isActive: true,
-      statusDescription: "PENDING"
+      _id: paymentId,
+      isActive: true
     })
       .populate("account")
       .exec();
 
-    if (payments.length == 0) return;
+    if (payment == null) return;
 
-    console.log("payment data :: " + payments);
+    // console.log("payment data :: " + payment);
 
 
     if (payment.externalRefId == "") return;
@@ -223,11 +223,11 @@ async function CronStatusCheckControllerForSinglePayment() {
       payload,
       "https://api.junipayments.com/checktranstatus"
     );
-    // console.log(
-    //   `response from juni pay status check ${util.inspect(
-    //     transactionStatusCheck
-    //   )}`
-    // ); 
+    console.log(
+      `response from juni pay status check ${util.inspect(
+        transactionStatusCheck
+      )}`
+    ); 
 
     if (transactionStatusCheck.code != "00") {
       console.log("status check failed for :: " + payment.externalRefId);
@@ -439,4 +439,5 @@ module.exports = {
   CronStatusCheckController,
   CronAccountDeletion,
   CronUserDeletion,
+  CronStatusCheckControllerForSinglePayment
 };
