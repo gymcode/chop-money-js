@@ -1,4 +1,4 @@
-const util = require('util')
+const util = require("util");
 const { CountryMsisdnValidation } = require("../utils/msisdnValidation");
 const {
   wrapFailureResponse,
@@ -20,7 +20,9 @@ const TransactionHistoryRepo = require("../repo/transactionHistoryRepo");
 const TransactionRepo = require("../repo/transactionRepo");
 const { SendSms } = require("../config/sms");
 const sendPushNotification = require("../config/oneSignal");
-const {CronStatusCheckControllerForSinglePayment} = require("./cronController");
+const {
+  CronStatusCheckControllerForSinglePayment,
+} = require("./cronController");
 const cron = require("node-cron");
 
 const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
@@ -65,9 +67,12 @@ exports.createAccount = async (req, res) => {
       if (response.code != "00") throw new Error(response.response.message);
     }
 
-    const numberOfDays = request.numberOfDays == "" || request.numberOfDays == undefined ? 31 : request.numberOfDays;
+    const numberOfDays =
+      request.numberOfDays == "" || request.numberOfDays == undefined
+        ? 31
+        : request.numberOfDays;
 
-    console.log(`number of days for receiving money :: ${numberOfDays}`)
+    console.log(`number of days for receiving money :: ${numberOfDays}`);
 
     const totalHours = numberOfDays * 24;
     let endDate =
@@ -129,8 +134,7 @@ exports.createAccount = async (req, res) => {
         throw new Error("This pay frequency does not exist");
     }
 
-    console.log("number of days to work :: ", days)
-
+    console.log("number of days to work :: ", days);
 
     const paymentResponse = await makePayment(
       request,
@@ -239,8 +243,8 @@ exports.disburseMoney = async (req, res) => {
       1000000000000 + Math.random() * 9000000000000
     );
 
-    // temp fix 
-    const provider = account.provider == "" ? user.provider: account.provider
+    // temp fix
+    const provider = account.provider == "" ? user.provider : account.provider;
 
     const paymentRequest = {
       amount: request.amount,
@@ -264,9 +268,14 @@ exports.disburseMoney = async (req, res) => {
       paymentRequest,
       disbursementUrl
     );
-    console.log("response from disbursement endpoint" + util.inspect(paymentResponse));
+    console.log(
+      "response from disbursement endpoint" + util.inspect(paymentResponse)
+    );
 
-    if (paymentResponse.code != "00" || paymentResponse.response.data.code == "401")
+    if (
+      paymentResponse.code != "00" ||
+      paymentResponse.response.data.code == "401"
+    )
       throw new Error(paymentResponse.response.message);
 
     const paymentAuditResponse = await PaymentRepo.addPayment(
@@ -354,26 +363,31 @@ exports.paymentResponse = async (req, res) => {
           request.foreignID
         );
 
-      console.log("transaction history :: " + transactionHistory)
+      console.log("transaction history :: " + transactionHistory);
 
       if (transactionHistory == null) {
-        transactionHistory =
-          await TransactionHistoryRepo.addTransactionHistory(
-            payment,
-            status,
-            request.foreignID
-          );
-      }else{
+        transactionHistory = await TransactionHistoryRepo.addTransactionHistory(
+          payment,
+          status,
+          request.foreignID
+        );
+      } else {
         if (paymentStatus) {
-          transactionHistory = await TransactionHistoryRepo.updateTransactionHistoryStatus("SUCCESS", request.foreignID)
-        }else{
-          transactionHistory = await TransactionHistoryRepo.updateTransactionHistoryStatus("FAILURE", request.foreignID)
+          transactionHistory =
+            await TransactionHistoryRepo.updateTransactionHistoryStatus(
+              "SUCCESS",
+              request.foreignID
+            );
+        } else {
+          transactionHistory =
+            await TransactionHistoryRepo.updateTransactionHistoryStatus(
+              "FAILURE",
+              request.foreignID
+            );
         }
       }
 
-      console.log(
-        "******** cre" + transactionHistory + "his **********"
-      );
+      console.log("******** cre" + transactionHistory + "his **********");
 
       if (transactionHistory != null && request.status == "success") {
         const account = await AccountRepo.getAccount(payment.account);
@@ -438,7 +452,9 @@ exports.topUp = async (req, res) => {
     if (account.isPaymentMade)
       throw new Error("Payment has already been made on this account.");
 
-    if (account.startDate.toLocaleDateString() < new Date().toLocaleDateString())
+    if (
+      account.startDate.toLocaleDateString() < new Date().toLocaleDateString()
+    )
       throw new Error(
         "Oops sorry your the time to start receiving money has started yet there's no cash!!!. Your account will be terminated soon"
       );
@@ -469,28 +485,31 @@ exports.transactionStatus = async (req, res) => {
     console.log(account);
     if (account == null) throw new Error("Account does not exist");
 
-
-    if (account.isPaymentMade){
+    if (account.isPaymentMade) {
       const response = {
         status: "PAID",
-        account: account
-      }
-      return wrapSuccessResponse(res, 200, response, null, token)
+        account: account,
+      };
+      return wrapSuccessResponse(res, 200, response, null, token);
     }
 
-    const payment = await PaymentRepo.getPaymentByAccountId(account._id)
+    const payment = await PaymentRepo.getPaymentByAccountId(account._id);
 
-    console.log("payment response :: ", payment)
+    console.log("payment response :: ", payment);
 
-    if (payment == null) throw new Error (`Payment for account ${account._id} does not exist.`)
+    if (payment == null)
+      throw new Error(`Payment for account ${account._id} does not exist.`);
 
-    if (payment.externalRefId == "") throw new Error (`External reference id cannot be found for your payment. Kindly contact suppport.`);
+    if (payment.externalRefId == "")
+      throw new Error(
+        `External reference id cannot be found for your payment. Kindly contact suppport.`
+      );
 
     const payload = {
       transID: payment.externalRefId,
     };
 
-    console.log("transaction id :: ", payment.externalRefId)
+    console.log("transaction id :: ", payment.externalRefId);
 
     const transactionStatusCheck = await JuniPayPayment(
       payload,
@@ -500,23 +519,29 @@ exports.transactionStatus = async (req, res) => {
       `response from juni pay status check ${util.inspect(
         transactionStatusCheck
       )}`
-    ); 
+    );
 
     if (transactionStatusCheck.code != "00") {
       console.log("status check failed for :: " + payment.externalRefId);
 
       const response = {
         status: "NOT_PAID",
-        account: account
-      }
-      return wrapSuccessResponse(res, 200, response, null, token)
-    }
+        account: account,
+      };
 
+      const deleteAccountResponse = await AccountRepo.deleteAccount(
+        params.accountId
+      );
+
+      if (!deleteAccountResponse.acknowledged)
+        throw new Error(`Could not delete account :: ${params.accountId}.`);
+
+      return wrapSuccessResponse(res, 200, response, null, token);
+    }
 
     let response;
     switch (transactionStatusCheck.response.data.status) {
       case "success":
-
         const updatedPayment = await PaymentRepo.updatePayment(
           "SUCCESS",
           payment._id,
@@ -530,27 +555,26 @@ exports.transactionStatus = async (req, res) => {
         );
         console.log("********" + updateAccountPayment + "**********");
 
-        const successAccount = await AccountRepo.getAccount(request.accountId)
+        const successAccount = await AccountRepo.getAccount(request.accountId);
         const successResponse = {
           status: "PAID",
-          account: successAccount
-        }
+          account: successAccount,
+        };
 
-        response = wrapSuccessResponse(res, 200, successResponse, null, token)
+        response = wrapSuccessResponse(res, 200, successResponse, null, token);
 
         break;
 
       case "pending":
         const pendingResponse = {
           status: "PENDING",
-          account: account
-        }
+          account: account,
+        };
 
-        response = wrapSuccessResponse(res, 200, pendingResponse, null, token)
+        response = wrapSuccessResponse(res, 200, pendingResponse, null, token);
         break;
-    
-      default:
 
+      default:
         const updatedFailedPayment = await PaymentRepo.updatePayment(
           "FAILED",
           payment._id,
@@ -561,21 +585,25 @@ exports.transactionStatus = async (req, res) => {
 
         const failedResponse = {
           status: "NOT_PAID",
-          account: account
-        }
+          account: account,
+        };
 
-        response = wrapSuccessResponse(res, 200, failedResponse, null, token)
+        const deleteAccountResponse = await AccountRepo.deleteAccount(
+          params.accountId
+        );
+
+        if (!deleteAccountResponse.acknowledged)
+          throw new Error(`Could not delete account :: ${params.accountId}.`);
+
+        response = wrapSuccessResponse(res, 200, failedResponse, null, token);
         break;
     }
 
-    
-
-    return response
+    return response;
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, error);
   }
 };
-
 
 exports.deleteAccount = async (req, res) => {
   try {
@@ -630,9 +658,15 @@ exports.deleteAccount = async (req, res) => {
       null
     );
 
-    const noOfDays = 2 - account.deleteDayCount
+    const noOfDays = 2 - account.deleteDayCount;
 
-    wrapSuccessResponse(res, 200, `Hi there, you will be able to delete your accout after ${noOfDays} days`, null, token);
+    wrapSuccessResponse(
+      res,
+      200,
+      `Hi there, you will be able to delete your accout after ${noOfDays} days`,
+      null,
+      token
+    );
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, null);
   }
@@ -647,27 +681,35 @@ exports.hardDeleteAccount = async (req, res) => {
     if (user == null)
       return wrapFailureResponse(res, 404, "User not found", null);
 
-    const account = await AccountRepo.getAccount(
-      params.accountId
-    );
+    const account = await AccountRepo.getAccount(params.accountId);
 
     if (account == null)
       return wrapFailureResponse(res, 404, "Account cannot be found");
 
     if (!account.isPaymentMade) {
-      const deleteAccountResponse =
-        await AccountRepo.deleteAccount(params.accountId);
+      const deleteAccountResponse = await AccountRepo.deleteAccount(
+        params.accountId
+      );
 
       if (!deleteAccountResponse.acknowledged)
-        throw new Error(
-          `Could not delete account :: ${params.accountId}.`
-        );
+        throw new Error(`Could not delete account :: ${params.accountId}.`);
 
-        wrapSuccessResponse(res, 200, `Account has successfully been deleted.`, null, token);
-    }else{
-      wrapSuccessResponse(res, 200, `Account delete account since payment has already been made on it`, null, token);
+      wrapSuccessResponse(
+        res,
+        200,
+        `Account has successfully been deleted.`,
+        null,
+        token
+      );
+    } else {
+      wrapSuccessResponse(
+        res,
+        200,
+        `Account delete account since payment has already been made on it`,
+        null,
+        token
+      );
     }
-
   } catch (error) {
     return wrapFailureResponse(res, 500, error.message, null);
   }
@@ -785,7 +827,7 @@ async function makePayment(request, user, userAccountId) {
         "https://chop-money.fly.dev/api/v1/account/callback/response",
     };
 
-    console.log(`request sent to Juni pay :: ${util.inspect(paymentRequest)}`)
+    console.log(`request sent to Juni pay :: ${util.inspect(paymentRequest)}`);
     console.log("initiating request to juni pay for payment");
     const paymentResponse = await JuniPayPayment(paymentRequest, paymentUrl);
     console.log("response from juni pay :: " + util.inspect(paymentResponse));
@@ -807,7 +849,7 @@ async function makePayment(request, user, userAccountId) {
     if (paymentAuditResponse == null)
       throw new Error("Could not save payment audit");
 
-    // startDynamicCron(paymentAuditResponse._id) 
+    // startDynamicCron(paymentAuditResponse._id)
 
     return { code: "00", response: paymentResponse.response.data };
   } catch (error) {
@@ -830,7 +872,6 @@ function accountCreationValidation(user) {
 
   return response;
 }
-
 
 // Function to start the dynamic cron job
 // function startDynamicCron(paymentId) {
