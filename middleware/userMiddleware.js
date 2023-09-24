@@ -63,7 +63,8 @@ function isUserAuthenticated() {
 
       const user = await User.findOne({ _id: payload._id })
         .populate({
-          path: "accounts"
+          path: "accounts",
+          match: { isPaymentMade: true }
           // populate: { path: "transactions" },
         })
         .exec();

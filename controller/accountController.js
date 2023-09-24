@@ -20,18 +20,11 @@ const TransactionHistoryRepo = require("../repo/transactionHistoryRepo");
 const TransactionRepo = require("../repo/transactionRepo");
 const { SendSms } = require("../config/sms");
 const sendPushNotification = require("../config/oneSignal");
-const {
-  CronStatusCheckControllerForSinglePayment,
-} = require("./cronController");
-const cron = require("node-cron");
 
 const paymentUrl = process.env.JUNI_PAY_PAYMENT_ENDPOINT;
 const disbursementUrl = process.env.JUNI_PAY_DISBURSEMENT_ENDPOINT;
 const resolveUrl = process.env.JUNI_RESOLVE_ENDPOINT;
 
-/*
-creating an account
-*/
 exports.createAccount = async (req, res) => {
   try {
     const request = req.body;
@@ -141,10 +134,6 @@ exports.createAccount = async (req, res) => {
       user,
       createdAccount._id
     );
-    // console.log(
-    //   "response from the payment to be made :: " +
-    //     util.inspect(paymentResponse)
-    // );
 
     if (paymentResponse.code != "00") throw new Error(paymentResponse.response);
 
@@ -872,27 +861,3 @@ function accountCreationValidation(user) {
 
   return response;
 }
-
-// Function to start the dynamic cron job
-// function startDynamicCron(paymentId) {
-//   console.log("initial interval for 30 seconds")
-//   let interval = 30 * 1000; // Initial interval is 30 seconds
-//   console.log(`interval :: ${interval}`)
-
-//   const cronTask = cron.schedule(`*/${interval / 1000} * * * * *`, () => {
-//     console.log(`Running status check for payment ${paymentId} at ${interval / 1000} seconds interval.`);
-//     CronStatusCheckControllerForSinglePayment(paymentId);
-
-//     // Increase the interval for the next run
-//     interval += 60 * 1000; // Add 30 seconds for the next run
-
-//     if (interval > 180000) {
-//       console.log(`Payment ${paymentId} status check completed.`);
-//       cronTask.stop()
-//     }
-//   });
-
-//   // Stop the cron job if it exceeds 3 minutes (180,000 milliseconds)
-//   console.log(`Starting cron task for interval ${interval / 1000}`)
-
-// }
