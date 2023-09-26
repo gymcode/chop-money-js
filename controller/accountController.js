@@ -476,8 +476,7 @@ exports.transactionStatus = async (req, res) => {
 
     if (account.isPaymentMade) {
       const response = {
-        status: "PAID",
-        account: account,
+        status: "PAID"
       };
       return wrapSuccessResponse(res, 200, response, null, token);
     }
@@ -514,8 +513,7 @@ exports.transactionStatus = async (req, res) => {
       console.log("status check failed for :: " + payment.externalRefId);
 
       const response = {
-        status: "NOT_PAID",
-        account: account,
+        status: "NOT_PAID"
       };
 
       const deleteAccountResponse = await AccountRepo.deleteAccount(
@@ -544,10 +542,8 @@ exports.transactionStatus = async (req, res) => {
         );
         console.log("********" + updateAccountPayment + "**********");
 
-        const successAccount = await AccountRepo.getAccount(request.accountId);
         const successResponse = {
-          status: "PAID",
-          account: successAccount,
+          status: "PAID"
         };
 
         response = wrapSuccessResponse(res, 200, successResponse, null, token);
@@ -556,8 +552,7 @@ exports.transactionStatus = async (req, res) => {
 
       case "pending":
         const pendingResponse = {
-          status: "PENDING",
-          account: account,
+          status: "PENDING"
         };
 
         response = wrapSuccessResponse(res, 200, pendingResponse, null, token);
@@ -573,8 +568,7 @@ exports.transactionStatus = async (req, res) => {
         console.log(`updated payment response ${updatedFailedPayment}`);
 
         const failedResponse = {
-          status: "NOT_PAID",
-          account: account,
+          status: "NOT_PAID"
         };
 
         const deleteAccountResponse = await AccountRepo.deleteAccount(
