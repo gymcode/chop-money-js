@@ -1,6 +1,6 @@
 const User = require("../models/User");
 
- async function addUser(request, msisdn, names) {
+async function addUser(request, msisdn, names) {
   const userRequest = new User({
     username: request.username,
     firstName: names[0],
@@ -8,37 +8,51 @@ const User = require("../models/User");
     msisdn: msisdn,
     countryCode: request.countryCode,
     isoCode: request.isoCode,
-    provider: request.provider
+    provider: request.provider,
   });
   return await userRequest.save();
 }
 
- async function getUserByMsisdn(msisdn) {
+async function getUserByMsisdn(msisdn) {
   return await User.findOne({ msisdn: msisdn }).exec();
 }
 
- async function getPopulatedUserDetailsByMsisdn(msisdn) {
+async function getPopulatedUserDetailsByMsisdn(msisdn) {
   return await User.findOne({ msisdn: msisdn })
     .populate({
       path: "accounts",
-      match: { isPaymentMade: true }
+      match: {
+        $and: [
+          // Condition 1: Payment is true
+          { isPaymentMade: true },
+
+          // Condition 2: Payment is true, and both remainder and availableAmountToCashOut are not equal to 0
+          {
+            isPaymentMade: true, 
+            $or: [
+              { remainder: { $ne: 0 } },
+              { availableAmountToCashOut: { $ne: 0 } },
+            ],
+          },
+        ],
+      },
     })
     .exec();
 }
 
- async function updateOTPIsOtpConfirmed(user) {
+async function updateOTPIsOtpConfirmed(user) {
   return await User.findOneAndUpdate(
     { _id: user._id },
     { isOtpConfirmed: true, update_at: new Date() },
     {
       new: true,
       upsert: true,
-      rawResult: true, 
+      rawResult: true,
     }
   );
 }
 
- async function resetUserAccount(user) {
+async function resetUserAccount(user) {
   return await User.findOneAndUpdate(
     { _id: user._id },
     {
@@ -50,12 +64,12 @@ const User = require("../models/User");
     {
       new: true,
       upsert: true,
-      rawResult: true, 
+      rawResult: true,
     }
   );
 }
- 
- async function updateUserDetails(request, user) {
+
+async function updateUserDetails(request, user) {
   return await User.findOneAndUpdate(
     { _id: user._id },
     {
@@ -66,7 +80,7 @@ const User = require("../models/User");
     {
       new: true,
       upsert: true,
-      rawResult: true, 
+      rawResult: true,
     }
   );
 }
@@ -81,12 +95,12 @@ async function updatePlayerID(msisdn, playerId) {
     {
       new: true,
       upsert: true,
-      rawResult: true, 
+      rawResult: true,
     }
   );
 }
 
- async function activateUserAccount(hashedPin, user) {
+async function activateUserAccount(hashedPin, user) {
   return await User.findOneAndUpdate(
     { _id: user._id },
     {
@@ -103,13 +117,12 @@ async function updatePlayerID(msisdn, playerId) {
   );
 }
 
-
 async function updateUserAccountDeleteStatus(userId) {
   return await User.updateOne(
     { _id: userId },
     {
       updateAt: new Date(),
-      isDelete: true
+      isDelete: true,
     },
     {
       new: true,
@@ -124,7 +137,7 @@ async function updateUserAccountDeleteCount(userId, deleteCount) {
     { _id: userId },
     {
       updateAt: new Date(),
-      isDeleteDayCount: deleteCount
+      isDeleteDayCount: deleteCount,
     },
     {
       new: true,
@@ -134,15 +147,14 @@ async function updateUserAccountDeleteCount(userId, deleteCount) {
   );
 }
 
-async function deleteAccount(userId){
-  return await User.deleteOne({_id: userId})
+async function deleteAccount(userId) {
+  return await User.deleteOne({ _id: userId });
 }
 
-function addAccountsToUser(user, accountResponse){
-    user.accounts.push(accountResponse._id);
-    user.save();
-  }
-
+function addAccountsToUser(user, accountResponse) {
+  user.accounts.push(accountResponse._id);
+  user.save();
+}
 
 module.exports = {
   addUser,
@@ -155,6 +167,6 @@ module.exports = {
   addAccountsToUser,
   updatePlayerID,
   deleteAccount,
-  updateUserAccountDeleteStatus, 
-  updateUserAccountDeleteCount
-}
+  updateUserAccountDeleteStatus,
+  updateUserAccountDeleteCount,
+};

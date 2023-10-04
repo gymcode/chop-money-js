@@ -18,7 +18,6 @@ function userValidationMiddleware(schema) {
 function isUserAuthenticated() {
   return async (req, res, next) => {
     try {
-
       const authHeader = req.headers["authorization"];
 
       if (authHeader == undefined)
@@ -37,7 +36,7 @@ function isUserAuthenticated() {
           null
         );
 
-      const token = authHeader.split(" ")
+      const token = authHeader.split(" ");
 
       let accessToken = token[1];
 
@@ -52,19 +51,32 @@ function isUserAuthenticated() {
           msg: "failure",
           data: null,
           error: {
-              error: true,
-              errMsg: "Un-authorized access", 
-              detailedError: null
-          }
-      })
-      
+            error: true,
+            errMsg: "Un-authorized access",
+            detailedError: null,
+          },
+        });
 
       let payload = data.payload;
 
       const user = await User.findOne({ _id: payload._id })
         .populate({
           path: "accounts",
-          match: { isPaymentMade: true }
+          match: {
+            $and: [
+              // Condition 1: Payment is true
+              { isPaymentMade: true },
+
+              // Condition 2: Payment is true, and both remainder and availableAmountToCashOut are not equal to 0
+              {
+                isPaymentMade: true,
+                $or: [
+                  { remainder: { $ne: 0 } },
+                  { availableAmountToCashOut: { $ne: 0 } },
+                ],
+              },
+            ],
+          },
           // populate: { path: "transactions" },
         })
         .exec();

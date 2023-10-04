@@ -100,8 +100,8 @@ async function CronNotificatioController() {
         if (user != null) {
           const resp = await sendPushNotification(
             [user.playerId],
-            "Money Ready",
-            "Yaaayyyy!!!, it's pay time. Cash out big time and the Lord is in control",
+            "💰 Cha-ching!",
+            "Your money is ready for cashing out! Time to celebrate!🎉",
             null
           );
           console.log(resp.response.data);

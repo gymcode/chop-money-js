@@ -281,6 +281,34 @@ exports.disburseMoney = async (req, res) => {
     if (paymentAuditResponse == null)
       throw new Error("Could not save payment audit");
 
+    console.log("******** acc" + account + "amt *********");
+
+    let amountCashedOut = account.amountCashedOut;
+    amountCashedOut += paymentAuditResponse.amount;
+
+    let currentAmountAvailable =
+      account.availableAmountToCashOut - paymentAuditResponse.amount;
+
+    let remainder = account.remainder - paymentAuditResponse.amount;
+
+    const updateAccountAmount = await AccountRepo.updateAccountAmounts(
+      currentAmountAvailable,
+      amountCashedOut,
+      account._id,
+      remainder
+    );
+    console.log(
+      "******** up" + util.inspect(updateAccountAmount) + "amt *********"
+    );
+
+    console.log(
+      "********" +
+        currentAmountAvailable +
+        " " +
+        amountCashedOut +
+        "**********"
+    );
+
     return wrapSuccessResponse(
       res,
       200,
@@ -361,16 +389,24 @@ exports.paymentResponse = async (req, res) => {
           request.foreignID
         );
       } else {
-        if (paymentStatus) {
-          transactionHistory =
+        if (!paymentStatus) {
+          if (status == "PENDING") {
+            transactionHistory =
             await TransactionHistoryRepo.updateTransactionHistoryStatus(
               "SUCCESS",
               request.foreignID
             );
+          }else{
+            transactionHistory =
+            await TransactionHistoryRepo.updateTransactionHistoryStatus(
+              "FAILURE",
+              request.foreignID
+            );
+          }
         } else {
           transactionHistory =
             await TransactionHistoryRepo.updateTransactionHistoryStatus(
-              "FAILURE",
+              "SUCCESS",
               request.foreignID
             );
         }
@@ -378,7 +414,7 @@ exports.paymentResponse = async (req, res) => {
 
       console.log("******** cre" + transactionHistory + "his **********");
 
-      if (transactionHistory != null && request.status == "success") {
+      if (transactionHistory != null && request.status == "failure") {
         const account = await AccountRepo.getAccount(payment.account);
 
         console.log("******** acc" + account + "amt *********");
@@ -387,9 +423,9 @@ exports.paymentResponse = async (req, res) => {
         amountCashedOut += payment.amount;
 
         let currentAmountAvailable =
-          account.availableAmountToCashOut - payment.amount;
+          account.availableAmountToCashOut + payment.amount;
 
-        let remainder = account.remainder - payment.amount;
+        let remainder = account.remainder + payment.amount;
 
         const updateAccountAmount = await AccountRepo.updateAccountAmounts(
           currentAmountAvailable,
@@ -411,12 +447,40 @@ exports.paymentResponse = async (req, res) => {
       }
     }
 
+
+    const account = await AccountRepo.getAccount(payment.account);
+    const user = account.user
+
     if (request.status == "success" && !payment.isDisbursement) {
       // update the account details
       const updateAccountPayment = await AccountRepo.updateAccountPayment(
         payment.account
       );
+
+      const resp = await sendPushNotification(
+        [user.playerId],
+        "Budget Created",
+        `Hey ${user.firstName}, big congrats on making your budget! Chopmoney's got your back every step of the way to help you stick to it. Keep up the great work managing your money smartly – you're doing awesome!`,
+        null
+      );
+      console.log(resp.response.data);
       console.log("********" + updateAccountPayment + "**********");
+    }
+    
+    if(request.status == "failed" && !payment.isDisbursement){
+      const resp = await sendPushNotification(
+        [user.playerId],
+        "Budget Creation Status"
+        `Sorry, your budget couldn’t be created. Please ensure your mobile money wallet has a sufficient balance and try again.`,
+        null
+      );
+      console.log(resp.response.data);
+
+      const deleteAccountResponse = await AccountRepo.deleteAccount(
+        payment.account
+      );
+
+      console.log("********" + deleteAccountResponse + "**********")
     }
 
     return wrapSuccessResponse(res, 200, "success", null);
@@ -542,6 +606,14 @@ exports.transactionStatus = async (req, res) => {
         );
         console.log("********" + updateAccountPayment + "**********");
 
+        const resp = await sendPushNotification(
+          [user.playerId],
+          "Budget Created",
+          `Hey ${user.firstName}, big congrats on making your budget! Chopmoney's got your back every step of the way to help you stick to it. Keep up the great work managing your money smartly – you're doing awesome!`,
+          null
+        );
+        console.log(resp.response.data);
+
         const successResponse = {
           status: "PAID"
         };
@@ -566,6 +638,14 @@ exports.transactionStatus = async (req, res) => {
           false
         );
         console.log(`updated payment response ${updatedFailedPayment}`);
+
+        const failedResp = await sendPushNotification(
+          [user.playerId],
+          "Budget Creation Status"
+          `Sorry, your budget couldn’t be created. Please ensure your mobile money wallet has a sufficient balance and try again.`,
+          null
+        );
+        console.log(failedResp.response.data);
 
         const failedResponse = {
           status: "NOT_PAID"

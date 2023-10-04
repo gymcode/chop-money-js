@@ -25,7 +25,7 @@ exports.nameCheck = async (req, res) => {
     // check if number is valid
     const nameCheckUrl = new URL(resolveUrl);
     nameCheckUrl.searchParams.set("channel", "mobile_money");
-    nameCheckUrl.searchParams.set("provider", request.provider);
+    nameCheckUrl.searchParams.set("provider", request.provider.replace(/\s/g, ''));
     nameCheckUrl.searchParams.set("phoneNumber", request.msisdn);
 
     console.log(nameCheckUrl);
@@ -139,7 +139,11 @@ exports.confirmOTP = async (req, res) => {
     if (!resp.value.isOtpConfirmed)
       throw new Error("Could not update OTP confirmation status");
 
-    wrapSuccessResponse(res, 200, resp.value, null);
+    const updatedUser = await UserRepo.getPopulatedUserDetailsByMsisdn(msisdn);
+    if (updatedUser == null)
+      throw new Error("You do not have an account, please consider siging up");
+
+    wrapSuccessResponse(res, 200,  _.omit(JSON.parse(JSON.stringify(updatedUser)), ["password"]), null);
   } catch (error) {
     console.log(error);
     return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
@@ -159,7 +163,7 @@ exports.resendOTP = async (req, res) => {
     if (error) throw new Error(msg);
     const msisdn = msg;
 
-    const user = await UserRepo.getUserByMsisdn(msisdn);
+    const user = await UserRepo.getPopulatedUserDetailsByMsisdn(msisdn);
     if (user == null)
       throw new Error("You do not have an account, please consider siging up");
 
@@ -183,7 +187,7 @@ exports.resendOTP = async (req, res) => {
       `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
     );
 
-    wrapSuccessResponse(res, 200, user);
+    wrapSuccessResponse(res, 200, _.omit(JSON.parse(JSON.stringify(user)), ["password"]));
   } catch (error) {
     console.log(error);
     return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
@@ -200,7 +204,7 @@ exports.resetPin = async (req, res) => {
     if (error) throw new Error(msg);
     const msisdn = msg;
 
-    let user = await UserRepo.getUserByMsisdn(msisdn);
+    let user = await UserRepo.getPopulatedUserDetailsByMsisdn(msisdn);
     if (user == null) throw new Error("User does not exist. Please sign up");
 
     const code = GenerateOTP();
@@ -224,7 +228,7 @@ exports.resetPin = async (req, res) => {
       `Your Chopmoney one-time PIN is: ${code} \n Don’t share it with anyone. \n\n Stick to your budget the smart way! www.chopmoney.co`
     );
 
-    wrapSuccessResponse(res, 200, _.omit(user, ["password"]));
+    wrapSuccessResponse(res, 200, _.omit(JSON.parse(JSON.stringify(user)), ["password"]));
   } catch (error) {
     console.log(error);
     return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
@@ -260,10 +264,14 @@ exports.setPin = async (req, res) => {
 
     const token = await signJwtWebToken(user, client);
 
+    const updatedUser = await UserRepo.getPopulatedUserDetailsByMsisdn(msisdn);
+    if (updatedUser == null)
+      throw new Error("You do not have an account, please consider siging up");
+
     wrapSuccessResponse(
       res,
       200,
-      _.omit(resp.value._doc, ["password"]),
+      _.omit(JSON.parse(JSON.stringify(updatedUser)), ["password"]),
       null,
       token
     );
@@ -296,9 +304,6 @@ exports.userLogin = async (req, res) => {
       throw new Error(
         "Password does not seem to have been set whiles the pin was being set"
       );
-
-    // if (new Date() < user.lockPeriod)
-    //     return wrapFailureResponse(res, 500, "Sorry cannot try until the time elapses.")
 
     const pinConfirmationStatus = bcrypt.compareSync(
       request.pin,
