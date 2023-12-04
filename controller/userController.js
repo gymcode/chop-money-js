@@ -348,6 +348,27 @@ exports.getUser = async (req, res) => {
   }
 };
 
+exports.getUsers = async (req, res) => {
+  try {
+    const { user, token } = res.locals.user_info;
+
+    if (user == null) throw new Error("User not found");
+
+    const users = await UserRepo.getUsers();
+
+    wrapSuccessResponse(
+      res,
+      200,
+      _.omit(JSON.parse(JSON.stringify(user)), ["password"]),
+      null,
+      token
+    );
+  } catch (error) {
+    console.log(error);
+    return wrapFailureResponse(res, 500, `An Error occured: ${error}`);
+  }
+};
+
 /*
 it should handle updating the playerID
 */

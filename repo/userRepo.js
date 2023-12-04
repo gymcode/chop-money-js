@@ -17,6 +17,10 @@ async function getUserByMsisdn(msisdn) {
   return await User.findOne({ msisdn: msisdn }).exec();
 }
 
+async function getUsers() {
+  return await User.find().select("-password").exec();
+}
+
 async function getPopulatedUserDetailsByMsisdn(msisdn) {
   return await User.findOne({ msisdn: msisdn })
     .populate({
@@ -158,6 +162,7 @@ function addAccountsToUser(user, accountResponse) {
 
 module.exports = {
   addUser,
+  getUsers,
   getUserByMsisdn,
   getPopulatedUserDetailsByMsisdn,
   updateOTPIsOtpConfirmed,

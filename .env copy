@@ -1,6 +1,22 @@
 DB_URI = "mongodb+srv://<UserName>:<Password>@cluster0.atkt6pm.mongodb.net/?retryWrites=true&w=majority"
 PORT = 3000
-ACCESS_TOKEN_SECRET= "access lets grow"
-REFRESH_TOKEN_SECRET= "refresh lets grow"
-REDIS.URL = "redis[s]://[[username][:password]@][host][:port]"
+ACCESS_TOKEN_SECRET= "JXCOyLk64bi9QKEIO207gj4JEdvH78BKzBFgiMiRbjHOMbJyj1dEzsvHduBHgIoePm1mKEoahsWQCAjum39Pa2"
+REFRESH_TOKEN_SECRET= "GGqCl8LPYwkYF8aVQa3yk6D3fgWiTxutav06A7DwdFOrKZClVDZgE6esvSFfK5wP2x0e91eIXmzzutqsyS1igP"
+REDIS.URL = "redis://[[username][:password]@][host][:port]"
 REDIS.PASSWORD = "DADKDBADKDJKADADDKKJABSDA"
+
+ONE_SIGNAL_APP_ID=
+ONE_SIGNAL_API_KEY=
+ONE_SIGNAL_URL=
+
+JUNI_PAY_CLIENT_ID=
+JUNI_PAY_PAYMENT_ENDPOINT=
+JUNI_PAY_DISBURSEMENT_ENDPOINT=
+JUNI_RESOLVE_ENDPOINT=
+JUNI_PAY_SENDER_MSISDN=
+JUNI_PAY_SENDER_NAME=
+
+NSANO_SMS_KEY=
+NSANO_SMS_URL=
+NALO_SMS_AUTH_KEY=
+
