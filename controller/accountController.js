@@ -840,6 +840,26 @@ exports.listAccounthistory = async (req, res) => {
   }
 };
 
+exports.listAccounts = async (req, res) => {
+  try {
+    const { user, token } = res.locals.user_info;
+
+    if (user == null)
+      return wrapFailureResponse(res, 404, "User not found", null);
+
+
+    const type = req.query.type
+    const page = req.query.page
+    const size = req.query.size
+
+    const account = await AccountRepo.getAccounts(page, size, type);
+
+    wrapSuccessResponse(res, 200, account, null, token);
+  } catch (error) {
+    return wrapFailureResponse(res, 500, error.message, null);
+  }
+};
+
 // function
 function transactionObject(arr, payTime, duration, transAmount, extra, accID) {
   const transactionAccountArray = [];

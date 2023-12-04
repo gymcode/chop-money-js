@@ -13,6 +13,8 @@ router.get("/user-accounts", isUserAuthenticated(client), accountController.getA
 
 router.get("/transaction-history/:accountId", isUserAuthenticated(client), accountController.listAccounthistory)
 
+router.get("/accounts", isUserAuthenticated(client), accountController.listAccounts)
+
 router.post("/top-up", isUserAuthenticated(client), accountController.topUp)
 
 router.post("/disburse-payment", isUserAuthenticated(client), accountController.disburseMoney)

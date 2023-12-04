@@ -38,6 +38,15 @@ async function getPopulatedTransactionAccountByUserId(userId) {
   return await Account.find({ user: userId }).populate("transactions").exec();
 }
 
+async function getAccounts(pageNumber, pageSize, type) {
+  const skip = (pageNumber - 1) * pageSize;
+
+  const query = type ? { chopMoneyOwner: type } : {};
+
+  return await Account.find(query).skip(skip).limit(pageSize).exec();
+}
+
+
 function addTransactionsToAccounts(savedTransactions, account) {
   savedTransactions.map(({ _id }) => {
     account .transactions.push(_id);
@@ -160,6 +169,7 @@ module.exports = {
   updateAccountAmounts,
   updateAccountPayment,
   getAccount,
+  getAccounts,
   getPopulatedTransactionAccountByUserId,
   getPopulatedTransactionsAccount,
   updateAccountDeleteCount,
