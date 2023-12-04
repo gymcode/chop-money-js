@@ -353,8 +353,10 @@ exports.getUsers = async (req, res) => {
     const { user, token } = res.locals.user_info;
 
     if (user == null) throw new Error("User not found");
+    const page = req.query.page
+    const size = req.query.size
 
-    const users = await UserRepo.getUsers();
+    const users = await UserRepo.getUsers(page, size);
 
     wrapSuccessResponse(
       res,

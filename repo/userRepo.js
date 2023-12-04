@@ -17,8 +17,9 @@ async function getUserByMsisdn(msisdn) {
   return await User.findOne({ msisdn: msisdn }).exec();
 }
 
-async function getUsers() {
-  return await User.find().select("-password").exec();
+async function getUsers(pageNumber, pageSize) {
+  const skip = (pageNumber - 1) * pageSize;
+  return await User.find().select("-password").skip(skip).limit(pageSize).exec();
 }
 
 async function getPopulatedUserDetailsByMsisdn(msisdn) {
