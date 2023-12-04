@@ -359,7 +359,7 @@ exports.getUsers = async (req, res) => {
     wrapSuccessResponse(
       res,
       200,
-      _.omit(JSON.parse(JSON.stringify(user)), ["password"]),
+      users,
       null,
       token
     );
