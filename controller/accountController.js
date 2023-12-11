@@ -851,8 +851,23 @@ exports.listAccounts = async (req, res) => {
     const type = req.query.type
     const page = req.query.page
     const size = req.query.size
+    const active = req.query.active
+    const inActive = req.query.inActive
+    const search = req.query.search
+    const startDate = req.query.startDate
+    const endDate = req.query.endDate
 
-    const account = await AccountRepo.getAccounts(page, size, type);
+
+    const account = await AccountRepo.getAccounts(
+      page, 
+      size, 
+      type, 
+      startDate,
+      endDate, 
+      active,
+      inActive,
+      search
+      );
 
     wrapSuccessResponse(res, 200, account, null, token);
   } catch (error) {

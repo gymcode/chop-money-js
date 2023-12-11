@@ -38,10 +38,43 @@ async function getPopulatedTransactionAccountByUserId(userId) {
   return await Account.find({ user: userId }).populate("transactions").exec();
 }
 
-async function getAccounts(pageNumber, pageSize, type) {
+async function getAccounts(pageNumber, pageSize, type, startDate, endDate, activeBudgets, inactiveBudgets, search) {
   const skip = (pageNumber - 1) * pageSize;
 
   const query = type ? { chopMoneyOwner: type } : {};
+
+  // Add additional filters based on parameters
+  if (startDate && endDate) {
+    query.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+  } else if (startDate) {
+    query.createdAt = { $gte: new Date(startDate) };
+  } else if (endDate) {
+    query.createdAt = { $lte: new Date(endDate) };
+  }
+
+  console.log("value for active ", activeBudgets)
+  if (activeBudgets) {
+    console.log("here")
+    query.isDelete = false;
+    query.availableAmountToCashOut = { $gt: 0 };
+    query.remainder = { $gt: 0 };
+  }
+
+  if (!activeBudgets) {
+    query.isDelete = true;
+    query.availableAmountToCashOut = 0;
+    query.remainder = 0;
+  }
+
+  if (search) {
+    // Add conditions for search by phone, user id, device id
+    query.$or = [
+      { ownerContact: new RegExp(search, 'i') },
+      { 'user._id': new RegExp(search, 'i') }, // Assuming 'userId' is the field in the 'user' document
+      { 'user.playerId': new RegExp(search, 'i') }, // Assuming 'userId' is the field in the 'user' document
+      // Add more conditions for other fields if needed
+    ];
+  }
 
   return await Account.find(query).skip(skip).limit(pageSize).exec();
 }
