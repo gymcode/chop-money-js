@@ -851,8 +851,8 @@ exports.listAccounts = async (req, res) => {
     const type = req.query.type
     const page = req.query.page
     const size = req.query.size
-    const active = req.query.active
-    const inActive = req.query.inActive
+    const active = req.query.active || false
+    const inActive = req.query.inActive || false
     const search = req.query.search
     const startDate = req.query.startDate
     const endDate = req.query.endDate

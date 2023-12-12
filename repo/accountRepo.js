@@ -60,7 +60,7 @@ async function getAccounts(pageNumber, pageSize, type, startDate, endDate, activ
     query.remainder = { $gt: 0 };
   }
 
-  if (!activeBudgets) {
+  if (inactiveBudgets) {
     query.isDelete = true;
     query.availableAmountToCashOut = 0;
     query.remainder = 0;
